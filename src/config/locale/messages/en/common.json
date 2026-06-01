@@ -1,0 +1,38 @@
+{
+  "common": {
+    "login": "Login",
+    "register": "Register",
+    "buy": "Buy Now",
+    "download": "Download",
+    "free": "Free",
+    "home": "Home",
+    "products": "Products",
+    "about": "About",
+    "pricing": "Pricing",
+    "contact": "Contact Us"
+  },
+  "hero": {
+    "tagline": "Digital Products Store",
+    "description": "Courses, software, ebooks, fonts, audio — all in one place"
+  },
+  "product": {
+    "features": "Features",
+    "lifetime": "Lifetime Access",
+    "freeUpdates": "Free Updates",
+    "downloadCount": "{count} Downloads"
+  },
+  "auth": {
+    "loginTitle": "Login",
+    "registerTitle": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "username": "Username",
+    "noAccount": "Don't have an account? Register",
+    "hasAccount": "Already have an account? Login"
+  },
+  "footer": {
+    "privacy": "Privacy Policy",
+    "refund": "Refund Policy"
+  }
+}

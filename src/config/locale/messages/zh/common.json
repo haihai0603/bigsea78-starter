@@ -1,0 +1,38 @@
+{
+  "common": {
+    "login": "登录",
+    "register": "注册",
+    "buy": "立即购买",
+    "download": "下载",
+    "free": "免费",
+    "home": "首页",
+    "products": "产品",
+    "about": "关于",
+    "pricing": "定价",
+    "contact": "联系我们"
+  },
+  "hero": {
+    "tagline": "数字商品商城",
+    "description": "课程、软件、电子书、字体、音频 — 一站式数字商品"
+  },
+  "product": {
+    "features": "产品特点",
+    "lifetime": "永久使用权",
+    "freeUpdates": "免费更新",
+    "downloadCount": "{count}次下载机会"
+  },
+  "auth": {
+    "loginTitle": "登录",
+    "registerTitle": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "username": "用户名",
+    "noAccount": "没有账号？注册",
+    "hasAccount": "已有账号？登录"
+  },
+  "footer": {
+    "privacy": "隐私政策",
+    "refund": "退款政策"
+  }
+}
