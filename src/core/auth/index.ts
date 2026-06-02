@@ -1,40 +1,29 @@
-// Auth module - Better Auth with caching for serverless
-
-import { betterAuth, type Auth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '@/core/db';
+// Auth module - Better Auth with Neon PostgreSQL
 import { siteConfig } from '@/config';
-import * as schema from '@/core/db/schema';
 
-// Cache auth instance to prevent cold-start re-creation
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let authInstance: any = null;
-let authPromise: Promise<any> | null = null;
-const CACHE_TTL = 30_000;
-let authCreatedAt = 0;
 
 export async function getAuth(): Promise<any> {
-  if (authInstance && Date.now() - authCreatedAt < CACHE_TTL) {
-    return authInstance;
-  }
-  if (authPromise) return authPromise;
+  if (authInstance) return authInstance;
 
-  authPromise = createAuth();
-  return authPromise;
-}
+  const { betterAuth } = await import('better-auth');
+  const { Pool } = await import('@neondatabase/serverless');
 
-async function createAuth(): Promise<any> {
+  const pool = new Pool({ connectionString: siteConfig.database_url });
+
   const auth = betterAuth({
     appName: siteConfig.app_name || 'bigsea78',
     baseURL: siteConfig.auth_url || 'http://localhost:3000',
     secret: siteConfig.auth_secret || 'dev-secret-change-me',
-    database: siteConfig.database_url
-      ? drizzleAdapter(db(), { provider: 'pg', schema })
-      : undefined,
+    database: pool,
     emailAndPassword: { enabled: true },
     session: {
       cookieCache: { enabled: true, maxAge: 5 * 60 },
+      tableName: 'session',
     },
+    user: { tableName: 'user' },
+    account: { tableName: 'account' },
+    verification: { tableName: 'verification' },
     socialProviders: {
       ...(siteConfig.google_client_id && siteConfig.google_client_secret
         ? { google: { clientId: siteConfig.google_client_id, clientSecret: siteConfig.google_client_secret } }
@@ -46,8 +35,6 @@ async function createAuth(): Promise<any> {
   });
 
   authInstance = auth;
-  authCreatedAt = Date.now();
-  authPromise = null;
   return auth;
 }
 

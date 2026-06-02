@@ -3,38 +3,74 @@ import { paymentManager, StripeProvider, LemonSqueezyProvider } from '@/extensio
 import { sendEmail, orderConfirmationEmail } from '@/extensions/email/resend';
 import { siteConfig } from '@/config';
 import { getUuid } from '@/shared/lib/hash';
+import {
+  getOrderByNo,
+  updateOrderStatus,
+  createDownload,
+  getProductById,
+} from '@/core/db/queries';
 
 export async function POST(req: Request) {
   try {
-    // Determine provider from URL query or header
+    // Determine provider from URL query
     const url = new URL(req.url);
     const provider = url.searchParams.get('provider') || 'stripe';
 
     const event = await paymentManager.getPaymentEvent(req, provider);
 
     if (event.eventType === 'payment.success' && event.orderNo) {
-      // 1. Update order status to 'paid'
-      // TODO: await updateOrderStatus(event.orderNo, 'paid', event.paymentInfo);
+      const order = await getOrderByNo(event.orderNo);
+      if (!order) {
+        console.error('Order not found:', event.orderNo);
+        return Response.json({ error: 'Order not found' }, { status: 404 });
+      }
 
-      // 2. Generate download token
+      // Skip if already paid (idempotency)
+      if (order.status === 'paid') {
+        return Response.json({ received: true });
+      }
+
+      // 1. Update order status to 'paid'
+      await updateOrderStatus(
+        event.orderNo,
+        'paid',
+        event.paymentInfo?.transactionId
+      );
+
+      // 2. Generate download token (24h expiry, 3 downloads max)
       const downloadToken = getUuid();
-      // TODO: await createDownloadToken(event.orderNo, downloadToken);
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await createDownload({
+        id: getUuid(),
+        orderId: order.id,
+        userId: order.userId,
+        token: downloadToken,
+        expiresAt,
+      });
 
       // 3. Send email with download link
-      if (event.paymentInfo?.email) {
+      const product = await getProductById(order.productId);
+      const recipientEmail = event.paymentInfo?.email;
+
+      if (recipientEmail && product) {
         const downloadUrl = siteConfig.app_url + '/download?token=' + downloadToken;
         const emailContent = orderConfirmationEmail({
-          productName: 'Product', // TODO: from order
+          productName: product.name,
           orderNo: event.orderNo,
           downloadUrl,
-          amount: event.paymentInfo.amount,
-          currency: event.paymentInfo.currency,
+          amount: order.amount,
+          currency: order.currency,
         });
-        await sendEmail({
-          to: event.paymentInfo.email,
-          subject: emailContent.subject,
-          html: emailContent.html,
-        });
+        try {
+          await sendEmail({
+            to: recipientEmail,
+            subject: emailContent.subject,
+            html: emailContent.html,
+          });
+        } catch (emailErr) {
+          console.error('Failed to send order email:', emailErr);
+          // Don't fail the webhook if email fails
+        }
       }
     }
 
@@ -45,7 +81,15 @@ export async function POST(req: Request) {
   }
 }
 
-// Stripe sends POST, LemonSqueezy sends POST
+// Stripe success redirect (GET) - redirect user to download page
 export async function GET(req: Request) {
-  return POST(req);
+  const url = new URL(req.url);
+  const orderNo = url.searchParams.get('order_no');
+
+  if (orderNo) {
+    // Redirect to a success page with the order number
+    return Response.redirect(siteConfig.app_url + '/download?order=' + orderNo);
+  }
+
+  return Response.redirect(siteConfig.app_url);
 }

@@ -1,67 +1,75 @@
-// Payment checkout API - create a payment session
-import { requireAuth } from '@/core/auth';
-import { paymentManager, StripeProvider, LemonSqueezyProvider } from '@/extensions/payment';
-import { siteConfig } from '@/config';
-import { getSnowId } from '@/shared/lib/hash';
+import { getAuth } from '@/core/auth';
+import { db } from '@/core/db';
+import { orders, products, downloads } from '@/core/db/schema';
 import { respData, respErr } from '@/shared/lib/resp';
+import { getUuid } from '@/shared/lib/hash';
+import { eq } from 'drizzle-orm';
 
-// Initialize providers on first call
-let providersInitialized = false;
-function initProviders() {
-  if (providersInitialized) return;
-  if (siteConfig.stripe_secret_key) {
-    paymentManager.addProvider(new StripeProvider(), true);
-  }
-  if (siteConfig.lemonsqueezy_api_key) {
-    paymentManager.addProvider(new LemonSqueezyProvider());
-  }
-  providersInitialized = true;
-}
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    initProviders();
+    const auth = await getAuth();
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) return respErr('Unauthorized', 401);
 
-    const { product_id, payment_provider } = await req.json();
-    if (!product_id) return respErr('product_id is required');
+    const body = await request.json();
+    const { product_id, quantity } = body;
 
-    // Get current user
-    const user = await requireAuth(req);
+    if (!product_id) return respErr('product_id required');
 
-    // TODO: Fetch product from DB, validate price server-side
-    // const product = await getProductById(product_id);
-    // if (!product) return respErr('Product not found');
+    // Get product
+    const product = await db.select().from(products).where(eq(products.id, product_id)).limit(1);
+    if (!product[0]) return respErr('Product not found', 404);
+    if (!product[0].active) return respErr('Product not available', 400);
 
-    const orderNo = getSnowId();
+    const qty = Math.max(1, Number(quantity) || 1);
+    const totalAmount = product[0].price * qty;
 
-    // Create payment session
-    const checkout = await paymentManager.createPayment(
-      {
+    // Create order
+    const orderNo = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const [order] = await db.insert(orders).values({
+      id: getUuid(),
+      orderNo,
+      userId: session.user.id,
+      productId: product_id,
+      amount: totalAmount,
+      currency: product[0].currency || 'cny',
+      status: 'pending',
+      quantity: qty,
+    }).returning();
+
+    // If free product, skip Stripe and mark paid immediately
+    if (product[0].price === 0) {
+      await db.update(orders).set({ status: 'paid', paidAt: new Date() }).where(eq(orders.id, order.id));
+
+      // Create download token
+      const token = getUuid();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await db.insert(downloads).values({
+        id: getUuid(),
+        orderId: order.id,
+        userId: session.user.id,
+        token,
+        maxDownloads: 3,
+        expiresAt,
+      });
+
+      return respData({
         orderNo,
-        productId: product_id, // will be payment provider's product ID
-        price: {
-          amount: 9900, // TODO: from product.price
-          currency: 'cny',
-        },
-        customer: {
-          email: user.email,
-          name: user.name,
-        },
-        description: 'Product Name', // TODO: from product.name
-        successUrl: siteConfig.app_url + '/api/payment/callback?order_no=' + orderNo,
-        cancelUrl: siteConfig.app_url + '/pricing',
-        metadata: {
-          user_id: user.id,
-          product_id,
-        },
-      },
-      payment_provider
-    );
+        free: true,
+        downloadUrl: `/api/download?token=${token}`,
+      });
+    }
 
-    // TODO: Create order in DB with status=pending
+    // TODO: Replace with real Stripe Checkout Session creation
+    // For now, return a mock checkout URL for dev
+    const mockCheckoutUrl = `/api/payment/mock-success?order_no=${orderNo}`;
 
-    return respData(checkout);
+    return respData({
+      orderNo,
+      checkoutUrl: mockCheckoutUrl,
+    });
   } catch (e: any) {
-    return respErr('Checkout failed: ' + e.message);
+    console.error('Checkout error:', e);
+    return respErr(e.message, 500);
   }
 }

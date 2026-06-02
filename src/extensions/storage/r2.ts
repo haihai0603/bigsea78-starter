@@ -1,29 +1,50 @@
 // Cloudflare R2 Storage - S3-compatible, free egress
+// Uses @aws-sdk/client-s3 for proper AWS Signature V4
 
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { siteConfig } from '@/config';
 
-// R2 uses S3 API, we call it via fetch for zero dependencies
-const R2_BASE = 'https://{account_id}.r2.cloudflarestorage.com';
+function getS3Client(): S3Client {
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${siteConfig.r2_account_id}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: siteConfig.r2_access_key_id,
+      secretAccessKey: siteConfig.r2_secret_access_key,
+    },
+  });
+}
 
-export async function uploadFile(key: string, body: Buffer, contentType: string) {
-  // Minimal S3 PutObject via fetch
-  // For production, use @aws-sdk/client-s3
-  const url = R2_BASE.replace('{account_id}', siteConfig.r2_account_id) + '/' + siteConfig.r2_bucket_name + '/' + key;
-
-  // TODO: implement proper AWS Signature V4 signing
-  // For now, use presigned URLs from your backend
-  console.log('Upload to R2:', url, 'contentType:', contentType);
-  return { key, url };
+export async function uploadFile(key: string, body: Buffer | Uint8Array, contentType: string) {
+  const client = getS3Client();
+  await client.send(new PutObjectCommand({
+    Bucket: siteConfig.r2_bucket_name,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  }));
+  return { key, url: getFileUrl(key) };
 }
 
 export function getFileUrl(key: string): string {
-  // If using custom domain for R2
-  return 'https://files.bigsea78.top/' + key;
+  // Custom domain for R2 (if configured)
+  return `https://files.bigsea78.top/${key}`;
 }
 
-export async function generateDownloadToken(fileUrl: string, expiresIn = 3600): Promise<string> {
-  // Generate a time-limited download URL
-  // In production, use R2 presigned URLs
-  const token = crypto.randomUUID();
-  return token;
+export async function getPresignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
+  const client = getS3Client();
+  const command = new GetObjectCommand({
+    Bucket: siteConfig.r2_bucket_name,
+    Key: key,
+  });
+  return getSignedUrl(client, command, { expiresIn });
+}
+
+export async function uploadProductFile(productId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop() ?? 'bin';
+  const key = `products/${productId}/${Date.now()}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await uploadFile(key, buffer, file.type);
+  return key;
 }

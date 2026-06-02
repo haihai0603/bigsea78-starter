@@ -1,51 +1,125 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/badge';
 import { Separator } from '@/shared/components/ui/separator';
+import { getProductById, getProducts } from '@/core/db/queries';
+import { site } from '@/site/config';
 
-// TODO: Fetch from DB
-const MOCK = { id: '1', name: 'AI写作助手', description: '智能文案生成工具，支持多种风格和语言。基于先进的大语言模型，为您提供专业的文案创作体验。', price: 9900, category: 'software' };
+const CATEGORY_ICONS: Record<string, string> = {
+  software: '💻', course: '🎓', ebook: '📖', font: '🔤', audio: '🎵', template: '📐',
+};
+
+export const revalidate = 60;
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = MOCK; // TODO: await getProductById(id)
+
+  let product = null;
+  try {
+    product = await getProductById(id);
+  } catch (e) {
+    console.error('DB error:', e);
+  }
+
+  if (!product) notFound();
+
+  // Related products
+  let related: any[] = [];
+  try {
+    const all = await getProducts({ category: product.category, active: true, limit: 4 });
+    related = all.filter((p: any) => p.id !== product.id).slice(0, 3);
+  } catch {}
+
+  const highlights: string[] = product.metadata?.highlights ?? [];
+  const categoryName = site.categories.find((c: any) => c.id === product.category)?.name || product.category;
 
   return (
-    <div className='min-h-screen bg-background'>
-      <div className='container mx-auto px-4 py-10'>
-        <div className='grid lg:grid-cols-2 gap-10'>
-          {/* Left - Product image/preview */}
-          <div className='aspect-square bg-muted rounded-xl flex items-center justify-center text-6xl'>
-            💻
+    <div className='container mx-auto px-4 py-10'>
+      <div className='grid md:grid-cols-2 gap-10'>
+        {/* Left: Cover */}
+        <div className='aspect-square bg-muted rounded-lg flex items-center justify-center text-8xl'>
+          {CATEGORY_ICONS[product.category] || '📦'}
+        </div>
+
+        {/* Right: Details */}
+        <div className='space-y-6'>
+          <div>
+            <Badge variant='secondary'>{categoryName}</Badge>
+            <h1 className='text-3xl font-bold mt-2'>{product.name}</h1>
           </div>
-          {/* Right - Product info */}
-          <div className='flex flex-col gap-6'>
-            <div>
-              <Badge variant='secondary' className='mb-2'>{product.category}</Badge>
-              <h1 className='text-3xl font-bold'>{product.name}</h1>
-            </div>
-            <p className='text-muted-foreground text-lg'>{product.description}</p>
-            <Separator />
-            <div className='flex items-center gap-4'>
-              <span className='text-3xl font-bold'>¥{(product.price / 100).toFixed(2)}</span>
-              <Button size='lg' className='flex-1'>立即购买</Button>
-            </div>
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-base'>产品特点</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className='space-y-2 text-sm text-muted-foreground'>
-                  <li>✅ 永久使用权</li>
-                  <li>✅ 免费更新</li>
-                  <li>✅ 3次下载机会</li>
-                  <li>✅ 邮件发送下载链接</li>
-                </ul>
-              </CardContent>
-            </Card>
+
+          <div className='text-4xl font-bold'>
+            {product.price === 0 ? '免费' : `¥${(product.price / 100).toFixed(0)}`}
+            {product.price > 0 && (
+              <span className='text-base font-normal text-muted-foreground ml-2'>一次性付费</span>
+            )}
           </div>
+
+          {highlights.length > 0 && (
+            <div className='flex flex-wrap gap-2'>
+              {highlights.map((h: string) => (
+                <Badge key={h} variant='outline'>{h}</Badge>
+              ))}
+            </div>
+          )}
+
+          <div className='flex gap-3'>
+            {product.price === 0 ? (
+              <Link href={`/api/auth/sign-up/email?callbackUrl=/api/download?product_id=${product.id}`}>
+                <Button size='lg' className='flex-1'>免费下载</Button>
+              </Link>
+            ) : (
+              <Link href={`/api/payment/checkout?product_id=${product.id}`}>
+                <Button size='lg' className='flex-1'>立即购买</Button>
+              </Link>
+            )}
+          </div>
+
+          <Separator />
+
+          <div className='space-y-3 text-sm'>
+            <div className='flex items-center gap-2'>
+              <span className='text-green-600'>✓</span> 永久使用权
+            </div>
+            <div className='flex items-center gap-2'>
+              <span className='text-green-600'>✓</span> 免费更新
+            </div>
+            <div className='flex items-center gap-2'>
+              <span className='text-green-600'>✓</span> 购买后即时下载
+            </div>
+          </div>
+
+          <Separator />
+
+          {product.description && (
+            <div className='prose prose-sm max-w-none'>
+              <h3>产品介绍</h3>
+              <p className='whitespace-pre-line text-muted-foreground'>{product.description}</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Related Products */}
+      {related.length > 0 && (
+        <section className='mt-16'>
+          <h3 className='text-2xl font-bold mb-6'>相关产品</h3>
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-6'>
+            {related.map((p: any) => (
+              <Link key={p.id} href={`/product/${p.id}`}>
+                <div className='border rounded-lg p-4 hover:shadow-md transition-shadow h-full flex flex-col'>
+                  <h4 className='font-semibold text-base mb-2'>{p.name}</h4>
+                  <p className='text-sm text-muted-foreground flex-1 line-clamp-2'>{p.description || '暂无描述'}</p>
+                  <div className='mt-3 font-bold'>
+                    {p.price === 0 ? '免费' : `¥${(p.price / 100).toFixed(0)}`}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,75 +1,258 @@
-# bigsea78-starter
+# BigSea78 Starter 🚀
 
-数字商品商城 SaaS 模板 — 基于 Next.js 16 + Better Auth + Drizzle + Stripe/LemonSqueezy
+数字产品销售平台 — Next.js 16 + Better Auth + Neon DB + Stripe
 
-## 技术栈
+## ✨ Features
 
-| 类别 | 技术 |
-|------|------|
-| 框架 | Next.js 16 (App Router + Turbopack) |
-| 样式 | Tailwind CSS v4 + shadcn/ui |
-| 认证 | Better Auth (邮箱+Google+GitHub) |
-| 数据库 | PostgreSQL (Neon) + Drizzle ORM |
-| 支付 | Stripe + LemonSqueezy (双通道) |
-| 邮件 | Resend |
-| 存储 | Cloudflare R2 |
-| 国际化 | next-intl |
+-OAuth login (GitHub/Google)
+-Stripe Checkout+Webhook  
+-Instant download(toklen expirty+max downloads)
+R2 storage for large files  -
+Resend email notifications  
 
-## 快速开始
 
-```bash
-# 1. 安装依赖
-pnpm install
+## Tech Stack  
 
-# 2. 配置环境变量
-cp .env.example .env.local
-# 编辑 .env.local 填入你的配置
+|Layer|Tech|
+|---|---|
+|Framework|Next js(App Router)|
+|Auth|Better Auth|
+DB |Neon(PstgreSQL)+Drizzle ORM|
+Payments |Stripe |
+Email |Resend |
+Storage |Cloudflare R2||Deploy||Railway |
 
-# 3. 创建数据库表
-npx drizzle-kit push
+## Quick Start  
 
-# 4. 启动开发服务器
-pnpm dev
-```
+```bash  
+pnpm install    
+cp .env.example .env   
+# Fill in .env vars(see bellow) 
+pnpm run dev    
 
-## 项目结构
 
-```
-src/
-├── config/          # 全局配置（env → siteConfig）
-├── core/            # 通用层：auth、db、rbac、i18n
-├── extensions/      # 可插拔扩展：payment、email、storage
-├── shared/          # 共享：components、blocks、lib
-├── site/            # 每站唯一：config.ts（品牌/分类/导航）
-└── app/             # Next.js App Router 页面
-```
+Open http://localost:3000    
 
-## 创建新站点
+## Environment Variables   
 
-只需修改 `src/site/config.ts` — 品牌、分类、导航、Footer 全在这里。
 
-## 页面清单
 
-- `/` — 首页（Hero + 分类 + 产品列表）
-- `/product/[id]` — 产品详情
-- `/pricing` — 定价方案
-- `/auth/login` — 登录
-- `/auth/register` — 注册
-- `/download?token=xxx` — 下载页
-- `/admin` — 管理后台
-- `/about` — 关于
-- `/privacy` — 隐私政策
-- `/refund` — 退款政策
-- `/api/auth/[...all]` — Better Auth API
-- `/api/payment/checkout` — 支付结账
-- `/api/payment/callback` — 支付回调
 
-## 注意事项
+ ``ini  
+#Better Auth   
+AUTH_SECRET==your-random-secret   
 
-- `pnpm install` 后会自动执行 `scripts/patch-kysely.js` 修复 better-auth 的 kysely 兼容性问题
-- Stripe API 版本已设为 `2026-05-27.dahlia`
-- Google Fonts 在国内不可用，已改用 system-ui
+#Neon DB    
+DATABASE_URL==postgresql://...     
 
-## License
 
-Private — 仅限 BigSea78 项目使用
+#Sttripe(Test mode first))   
+STRIPE_SECRET_KEY==sk_test_xxx     
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY==pk_test_xxx      
+STRIPE_WEBHOOK_SECRET==whsec_xxx      
+
+
+#Resend    
+RESEND_API_KEY==re_xxx      
+
+
+#R2(optional)||R2_ACCOUNT_ID==xxxx      
+R22_ACCESS_KEY_ID===xxxx       
+R22_BUCKET_NAME===products        
+RR_PUBLIC_URL====https:://pub-xxx.r22.dev        
+
+
+
+ADMIN_EMAILS==your@email.com     
+    
+``
+
+
+
+
+##Testing Payments    
+
+
+
+
+1.Register att https://dashboard.stripe.com/test/apikeys     
+
+
+
+
+
+
+22Copy **Publishable key**+ *Secret key*→`. env`       
+
+
+
+
+
+
+33Restart dev server        
+44Visit `/pricing`→click buy        
+55Use test card:`42424242424242422`,exp.anyfuture date,CVV.any3digits         
+
+
+
+
+
+
+66Webhook automatically updates order status→sends emai l        
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Deploy t Railway          
+
+
+
+
+``bash     
+
+
+
+
+
+
+
+
+cd D:\11-dylx\bigs ea788-sstarter       
+git init         
+git add ..        
+
+
+
+
+
+
+
+
+git commit--m""init""          
+git remote add origin https:://gitee.com/bBigsea788/bBigsea788-sstarter.git          
+git push--uoriginmain            
+``
+
+
+
+
+
+
+
+
+
+
+
+1.Visit https://railway.app/dashboard      
+222New Project→Deploy from GitHub repo           
+
+
+
+
+
+
+
+
+
+33Select repo         
+44Variables tab→add all `.env`vars(except DATABASE_URL)))           
+
+
+
+
+
+55Add PostgreSQL plugin→copy genearated DATABSE_URL             
+
+
+
+
+
+
+
+
+
+
+
+66Deployments→wait fo build          
+77Domains →generate URL        
+
+
+
+
+
+
+
+
+88Update NEXT_PUBLIC_APP_URLin variables            
+
+
+
+
+
+
+
+
+
+99Redeploy           
+
+
+
+
+
+
+
+
+
+Done!Site live🎉             
+
+
+
+
+
+
+
+
+
+
+
+## Admin Access          
+
+
+
+
+
+After signup,,set ADMIN_EMAILS in `. env(`or Railay variables));;restart;visit `/admin`;         
+
+
+
+
+
+
+
+
+Only matching emails can access admin routes..          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+License MIT©2026 BigSea78〘Ｃｏｎｔａｃｔ〖support@bigsea78.top〗【Workflow】〖Gitee〗(https:://gitee.com/bBigSea78)

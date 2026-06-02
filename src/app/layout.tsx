@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { Header } from '@/shared/components/blocks/header';
+import { Footer } from '@/shared/components/blocks/footer';
 
 export const metadata: Metadata = {
   title: process.env.NEXT_PUBLIC_APP_NAME || 'BigSea78',
@@ -13,7 +15,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang='zh'>
-      <body style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{children}</body>
+      <body style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <Header />
+        <main>{children}</main>
+        <Footer />
+      </body>
     </html>
   );
 }

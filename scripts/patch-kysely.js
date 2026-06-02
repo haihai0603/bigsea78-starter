@@ -22,15 +22,15 @@ function patchDir(dir) {
           // Remove from import statements
           content = content.replace(/,\s*DEFAULT_MIGRATION_TABLE/g, '');
           content = content.replace(/DEFAULT_MIGRATION_TABLE,\s*/g, '');
-          // Replace usage with string literal
-          content = content.replace(/DEFAULT_MIGRATION_TABLE/g, "'kysely_migration'");
+          // Replace usage with unquoted identifier (for export const etc)
+          content = content.replace(/DEFAULT_MIGRATION_TABLE/g, 'kysely_migration');
           modified = true;
         }
         
         if (content.includes('DEFAULT_MIGRATION_LOCK_TABLE')) {
           content = content.replace(/,\s*DEFAULT_MIGRATION_LOCK_TABLE/g, '');
           content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE,\s*/g, '');
-          content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE/g, "'kysely_migration_lock'");
+          content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE/g, 'kysely_migration_lock');
           modified = true;
         }
         
