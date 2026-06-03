@@ -1,5 +1,8 @@
-// Auth module - Better Auth with Neon PostgreSQL + Kysely
+// Auth module - Better Auth with Neon PostgreSQL + Drizzle Adapter
 import { siteConfig } from '@/config';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { neon } from '@neondatabase/serverless';
 
 let authInstance: any = null;
 
@@ -7,11 +10,8 @@ export async function getAuth(): Promise<any> {
   if (authInstance) return authInstance;
 
   const { betterAuth } = await import('better-auth');
-  const { Pool } = await import('@neondatabase/serverless');
-  const { drizzle } = await import('drizzle-orm/neon-serverless');
-  const { neon } = await import('@neondatabase/serverless');
 
-  // Use Drizzle adapter (Better Auth内置支持)
+  // Neon + Drizzle setup
   const sql = neon(siteConfig.database_url!);
   const db = drizzle(sql);
 
@@ -19,8 +19,10 @@ export async function getAuth(): Promise<any> {
     appName: siteConfig.app_name || 'bigsea78',
     baseURL: siteConfig.auth_url || 'http://localhost:3000',
     secret: siteConfig.auth_secret || 'dev-secret-change-me',
-    // 使用数据库适配器
-    database: db,
+    // Use Drizzle adapter (required for Better Auth)
+    database: drizzleAdapter(db, {
+      provider: 'pg', // postgres
+    }),
     emailAndPassword: { enabled: true },
     session: {
       cookieCache: { enabled: true, maxAge: 5 * 60 },
