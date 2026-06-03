@@ -1,4 +1,4 @@
-// Auth module - Better Auth with Neon PostgreSQL
+// Auth module - Better Auth with Neon PostgreSQL + Kysely
 import { siteConfig } from '@/config';
 
 let authInstance: any = null;
@@ -8,14 +8,19 @@ export async function getAuth(): Promise<any> {
 
   const { betterAuth } = await import('better-auth');
   const { Pool } = await import('@neondatabase/serverless');
+  const { drizzle } = await import('drizzle-orm/neon-serverless');
+  const { neon } = await import('@neondatabase/serverless');
 
-  const pool = new Pool({ connectionString: siteConfig.database_url });
+  // Use Drizzle adapter (Better Auth内置支持)
+  const sql = neon(siteConfig.database_url!);
+  const db = drizzle(sql);
 
   const auth = betterAuth({
     appName: siteConfig.app_name || 'bigsea78',
     baseURL: siteConfig.auth_url || 'http://localhost:3000',
     secret: siteConfig.auth_secret || 'dev-secret-change-me',
-    database: pool,
+    // 使用数据库适配器
+    database: db,
     emailAndPassword: { enabled: true },
     session: {
       cookieCache: { enabled: true, maxAge: 5 * 60 },
