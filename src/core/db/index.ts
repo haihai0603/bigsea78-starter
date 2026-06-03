@@ -12,9 +12,8 @@ export function db() {
   const { neon } = require('@neondatabase/serverless');
   const { drizzle } = require('drizzle-orm/neon-http');
   
-  // Remove pooler, use direct connection for lower latency
-  const dbUrl = siteConfig.database_url.replace('pooler', 'db').replace('?.*', '');
-  _sql = neon(dbUrl + '?sslmode=require');
+  // Use DATABASE_URL as-is (Neon pooler endpoints work fine)
+  _sql = neon(siteConfig.database_url);
   _db = drizzle(_sql, { schema });
 
   return _db;
