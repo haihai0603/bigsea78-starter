@@ -19,11 +19,7 @@ export async function getAuth(): Promise<any> {
     emailAndPassword: { enabled: true },
     session: {
       cookieCache: { enabled: true, maxAge: 5 * 60 },
-      tableName: 'session',
     },
-    user: { tableName: 'user' },
-    account: { tableName: 'account' },
-    verification: { tableName: 'verification' },
     socialProviders: {
       ...(siteConfig.google_client_id && siteConfig.google_client_secret
         ? { google: { clientId: siteConfig.google_client_id, clientSecret: siteConfig.google_client_secret } }

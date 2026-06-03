@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     if (!product_id) return respErr('product_id required');
 
     // Get product
-    const product = await db.select().from(products).where(eq(products.id, product_id)).limit(1);
+    const product = await db().select().from(products).where(eq(products.id, product_id)).limit(1);
     if (!product[0]) return respErr('Product not found', 404);
     if (!product[0].active) return respErr('Product not available', 400);
 
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     // Create order
     const orderNo = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const [order] = await db.insert(orders).values({
+    const [order] = await db().insert(orders).values({
       id: getUuid(),
       orderNo,
       userId: session.user.id,
@@ -39,12 +39,12 @@ export async function POST(request: Request) {
 
     // If free product, skip Stripe and mark paid immediately
     if (product[0].price === 0) {
-      await db.update(orders).set({ status: 'paid', paidAt: new Date() }).where(eq(orders.id, order.id));
+      await db().update(orders).set({ status: 'paid', paidAt: new Date() }).where(eq(orders.id, order.id));
 
       // Create download token
       const token = getUuid();
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await db.insert(downloads).values({
+      await db().insert(downloads).values({
         id: getUuid(),
         orderId: order.id,
         userId: session.user.id,

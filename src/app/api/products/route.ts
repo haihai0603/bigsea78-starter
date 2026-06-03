@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
       category: category || '',
       coverImage: coverImage || '',
       downloadUrl: downloadUrl || '',
-      active: active !== false ? 1 : 0,
     });
 
     return NextResponse.json({ data: { id }, message: '产品创建成功' });

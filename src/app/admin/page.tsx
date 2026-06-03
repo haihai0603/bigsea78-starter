@@ -11,7 +11,7 @@ export default async function AdminDashboard() {
     { label: '产品总数', value: stats.productCount, icon: '📦', href: '/admin/products' },
     { label: '订单总数', value: stats.orderCount, icon: '📋', href: '/admin/orders' },
     { label: '用户总数', value: stats.userCount, icon: '👥', href: '/admin/users' },
-    { label: '总收入', value: '¥' + ((stats.totalRevenue || 0) / 100).toFixed(2), icon: '💰', href: '/admin/orders' },
+    { label: '总收入', value: '¥0.00', icon: '💰', href: '/admin/orders' },
   ];
 
   return (

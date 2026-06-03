@@ -17,7 +17,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
   let product = null;
   try {
-    product = await getProductById(id);
+    product = await getProductById(id) as any;
   } catch (e) {
     console.error('DB error:', e);
   }
