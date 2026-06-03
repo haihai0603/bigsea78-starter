@@ -3,7 +3,7 @@
 import { site } from '@/site/config';
 import { Button } from '@/shared/components/ui/button'; import Card, CardContent, CardFooter } from '@/shared/components/ui/card';
 import Link from 'next/link'; import { useEffect, useState } from 'react';
-import type { getProductList } from '@/@core/data';
+import { getProductList } from '@/core/data';
 
 type ProductItem = Awaited<ReturnType<typeof getProductList>>[number]; const features = [
   { title: '⚡️即时交付', desc: '支付成功自动生成下载链接，无需人工介入' },   { title: '🔒️安全支付', desc: 'Stripe全球支付通道，支持信用卡/PayPal' },
