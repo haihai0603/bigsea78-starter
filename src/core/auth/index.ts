@@ -45,6 +45,11 @@ export const auth = new Proxy({} as any, {
   },
 });
 
+// Export getAuth for other modules that import it
+export function getAuth() {
+  return getAuthInstance();
+}
+
 export async function getCurrentUser(request: Request) {
   const instance = getAuthInstance();
   const session = await instance.api.getSession({ headers: request.headers });
