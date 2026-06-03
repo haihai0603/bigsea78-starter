@@ -1,4 +1,4 @@
-// Auth module - Better Auth with Neon PostgreSQL (simplified)
+// Auth module - Better Auth with Drizzle + Neon PostgreSQL
 import { siteConfig } from '@/config';
 
 let authInstance: any = null;
@@ -7,13 +7,20 @@ export async function getAuth(): Promise<any> {
   if (authInstance) return authInstance;
 
   const { betterAuth } = await import('better-auth');
+  const { drizzleAdapter } = await import('better-auth/adapters/drizzle');
+  const { neon } = await import('@neondatabase/serverless');
+  const { drizzle } = await import('drizzle-orm/neon-http');
+
+  // 创建 Neon SQL 连接
+  const sql = neon(siteConfig.database_url!);
+  // 创建 Drizzle 实例（不传 schema，让 Better Auth 自己管理 auth 表）
+  const db = drizzle(sql);
 
   const auth = betterAuth({
     appName: siteConfig.app_name || 'bigsea78',
     baseURL: siteConfig.auth_url || 'http://localhost:3000',
     secret: siteConfig.auth_secret || 'dev-secret-change-me',
-    // 直接传数据库连接字符串，Better Auth 会自动处理
-    database: siteConfig.database_url!,
+    database: drizzleAdapter(db),
     emailAndPassword: { enabled: true },
     session: {
       cookieCache: { enabled: true, maxAge: 5 * 60 },
