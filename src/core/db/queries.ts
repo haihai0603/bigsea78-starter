@@ -140,6 +140,18 @@ export async function getOrdersByUser(userId: string): Promise<Order[]> {
   return db().select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt)) as unknown as Promise<Order[]>;
 }
 
+export async function getOrders(options?: {
+  limit?: number;
+  offset?: number;
+}): Promise<Order[]> {
+  return db()
+    .select()
+    .from(orders)
+    .orderBy(desc(orders.createdAt))
+    .limit(options?.limit ?? 50)
+    .offset(options?.offset ?? 0) as unknown as Promise<Order[]>;
+}
+
 export async function updateOrderStatus(orderNo: string, status: string, paymentId?: string): Promise<void> {
   const updates: any = { status, updatedAt: new Date() };
   if (status === 'paid') updates.paidAt = new Date();
