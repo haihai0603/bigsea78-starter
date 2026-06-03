@@ -7,20 +7,22 @@ export async function getAuth(): Promise<any> {
   if (authInstance) return authInstance;
 
   const { betterAuth } = await import('better-auth');
-  const { drizzleAdapter } = await import('better-auth/adapters/drizzle');
+  const { drizzleAdapter } = await import('@better-auth/drizzle-adapter');
   const { neon } = await import('@neondatabase/serverless');
   const { drizzle } = await import('drizzle-orm/neon-http');
 
   // 创建 Neon SQL 连接
   const sql = neon(siteConfig.database_url!);
-  // 创建 Drizzle 实例（不传 schema，让 Better Auth 自己管理 auth 表）
+  // 创建 Drizzle 实例
   const db = drizzle(sql);
 
   const auth = betterAuth({
     appName: siteConfig.app_name || 'bigsea78',
     baseURL: siteConfig.auth_url || 'http://localhost:3000',
     secret: siteConfig.auth_secret || 'dev-secret-change-me',
-    database: drizzleAdapter(db),
+    database: drizzleAdapter(db, {
+      provider: 'pg',
+    }),
     emailAndPassword: { enabled: true },
     session: {
       cookieCache: { enabled: true, maxAge: 5 * 60 },
