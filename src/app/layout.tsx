@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='zh'>
-      <body style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <html lang='zh' suppressHydrationWarning>
+      <body style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }} suppressHydrationWarning>
         <Header />
         <main>{children}</main>
         <Footer />
