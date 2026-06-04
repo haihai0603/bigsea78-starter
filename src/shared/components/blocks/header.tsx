@@ -3,7 +3,14 @@
 import { site } from '@/site/config';
 import { Button } from '@/shared/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/shared/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+}
 
 const CATEGORY_ICONS: Record<string, string> = {
   software: '💻', course: '🎓', ebook: '📖', font: '🔤', audio: '🎵', template: '📐',
@@ -11,6 +18,22 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) setUser(data.user);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleLogout() {
+    await fetch('/api/auth/sign-out', { method: 'POST' });
+    setUser(null);
+    window.location.href = '/';
+  }
 
   return (
     <header className='sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
@@ -26,8 +49,17 @@ export function Header() {
           </nav>
         </div>
         <div className='flex items-center gap-2'>
-          <Button variant='ghost' size='sm' onClick={() => { window.location.href = '/auth/login'; }}>登录</Button>
-          <Button size='sm' onClick={() => { window.location.href = '/auth/register'; }}>注册</Button>
+          {user ? (
+            <>
+              <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
+              <Button variant='ghost' size='sm' onClick={handleLogout}>退出</Button>
+            </>
+          ) : (
+            <>
+              <Button variant='ghost' size='sm' onClick={() => { window.location.href = '/auth/login'; }}>登录</Button>
+              <Button size='sm' onClick={() => { window.location.href = '/auth/register'; }}>注册</Button>
+            </>
+          )}
 
           {/* Mobile menu */}
           <Sheet open={open} onOpenChange={setOpen}>
