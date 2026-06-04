@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { site } from '@/site/config';
 import { Button } from '@/shared/components/ui/button';
@@ -22,7 +22,6 @@ export function Header() {
     fetch('/api/auth/session', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
-        console.log('[Header] session response:', data);
         if (data?.user) setUser(data.user);
       })
       .catch(() => {});
@@ -34,8 +33,11 @@ export function Header() {
     window.location.href = '/';
   }
 
+  // Prevent hydration mismatch: don't render user-dependent UI until after mount
+  const showUserSection = mounted;
+
   return (
-    <header className='sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60' suppressHydrationWarning>
+    <header className='sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
       <div className='container mx-auto flex h-14 items-center justify-between px-4'>
         <div className='flex items-center gap-6'>
           <a href='/' className='text-lg font-bold'>{site.name}</a>
@@ -47,17 +49,19 @@ export function Header() {
             ))}
           </nav>
         </div>
-        <div className='flex items-center gap-2' suppressHydrationWarning>
-          {mounted && user ? (
-            <>
-              <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
-              <Button variant='ghost' size='sm' onClick={handleLogout}>退出登录</Button>
-            </>
-          ) : mounted ? (
-            <>
-              <Button variant='ghost' size='sm' onClick={() => { window.location.href = '/auth/login'; }}>登录</Button>
-              <Button size='sm' onClick={() => { window.location.href = '/auth/register'; }}>注册</Button>
-            </>
+        <div className='flex items-center gap-2'>
+          {showUserSection ? (
+            user ? (
+              <>
+                <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
+                <Button variant='ghost' size='sm' onClick={handleLogout}>退出登录</Button>
+              </>
+            ) : (
+              <>
+                <Button variant='ghost' size='sm' onClick={() => { window.location.href = '/auth/login'; }}>登录</Button>
+                <Button size='sm' onClick={() => { window.location.href = '/auth/register'; }}>注册</Button>
+              </>
+            )
           ) : null}
 
           {/* Mobile menu */}
@@ -73,16 +77,18 @@ export function Header() {
                   </a>
                 ))}
                 <hr />
-                {mounted && user ? (
-                  <>
-                    <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
-                    <Button variant='ghost' size='sm' onClick={handleLogout} className='justify-start px-0'>退出登录</Button>
-                  </>
-                ) : mounted ? (
-                  <>
-                    <a href='/auth/login' className='text-base' onClick={() => setOpen(false)}>登录</a>
-                    <a href='/auth/register' className='text-base' onClick={() => setOpen(false)}>注册</a>
-                  </>
+                {showUserSection ? (
+                  user ? (
+                    <>
+                      <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
+                      <Button variant='ghost' size='sm' onClick={handleLogout} className='justify-start px-0'>退出登录</Button>
+                    </>
+                  ) : (
+                    <>
+                      <a href='/auth/login' className='text-base' onClick={() => setOpen(false)}>登录</a>
+                      <a href='/auth/register' className='text-base' onClick={() => setOpen(false)}>注册</a>
+                    </>
+                  )
                 ) : null}
               </nav>
             </SheetContent>
