@@ -1,21 +1,26 @@
-// Simple auth test - no Better Auth, just check if module loads
+// Test JWT auth dependencies
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Test 1: Check if better-auth can be imported
-    const { betterAuth } = await import('better-auth');
+    // Test 1: Import bcryptjs
+    const bcrypt = await import('bcryptjs');
     
-    // Test 2: Check DATABASE_URL
-    const dbUrl = process.env.DATABASE_URL || 'NOT_SET';
-    const dbUrlPrefix = dbUrl.substring(0, 30);
+    // Test 2: Import jsonwebtoken  
+    const jwt = await import('jsonwebtoken');
+    
+    // Test 3: Try to hash a password
+    const hash = await bcrypt.hash('test123', 10);
+    
+    // Test 4: Try to create a JWT
+    const token = jwt.sign({ test: 'data' }, 'secret', { expiresIn: '1h' });
     
     return NextResponse.json({
       status: 'ok',
-      betterAuthImport: 'success',
-      databaseUrlPrefix: dbUrlPrefix,
-      databaseUrlLength: dbUrl.length,
-      nodeEnv: process.env.NODE_ENV,
+      bcryptImport: 'success',
+      jwtImport: 'success',
+      hashTest: hash.substring(0, 20) + '...',
+      tokenTest: token.substring(0, 20) + '...',
     });
   } catch (error: any) {
     return NextResponse.json({
