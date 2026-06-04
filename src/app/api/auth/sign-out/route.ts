@@ -1,8 +1,15 @@
-import { respData } from '@/shared/lib/resp';
+import { NextResponse } from 'next/server';
 
 export async function POST() {
-  const headers = new Headers();
-  headers.append('Set-Cookie', 'auth_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
-
-  return respData({ success: true }, headers);
+  const response = NextResponse.json({ code: 0, data: { success: true } });
+  response.cookies.set({
+    name: 'auth_token',
+    value: '',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+  return response;
 }
