@@ -1,18 +1,8 @@
 import { respData } from '@/shared/lib/resp';
-import { serialize } from 'cookie';
 
 export async function POST() {
   const headers = new Headers();
-  headers.append(
-    'Set-Cookie',
-    serialize('auth_token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      expires: new Date(0),
-    })
-  );
+  headers.append('Set-Cookie', 'auth_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
 
   return respData({ success: true }, headers);
 }
