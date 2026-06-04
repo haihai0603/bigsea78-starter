@@ -15,8 +15,15 @@ export async function POST(request: Request) {
       return respErr('Password must be at least 6 characters', 400);
     }
 
-    const user = await signUp(email, password, name);
-    return respData({ user });
+    const { user, verificationSent } = await signUp(email, password, name);
+
+    return respData({
+      user,
+      message: verificationSent
+        ? '注册成功！请查收邮箱验证邮件'
+        : '注册成功，但邮件发送失败，请联系管理员',
+      verificationSent,
+    });
   } catch (e: any) {
     if (e.message.includes('already registered')) {
       return respErr('Email already registered', 409);

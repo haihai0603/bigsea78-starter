@@ -12,11 +12,13 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (password !== confirmPassword) {
       setError('两次密码不一致');
@@ -34,10 +36,10 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
+      const data = await res.json();
       if (res.ok) {
-        window.location.href = '/';
+        setSuccess(data.data?.message || '注册成功！请查收验证邮件');
       } else {
-        const data = await res.json();
         setError(data.message || '注册失败');
       }
     } catch {
@@ -63,7 +65,8 @@ export default function RegisterPage() {
           </div>
           <Separator />
           <form className='space-y-3' onSubmit={handleRegister}>
-            {error && <p className='text-sm text-red-600'>{error}</p>}
+            {error && <p className='text-sm text-red-600 bg-red-50 p-3 rounded'>{error}</p>}
+            {success && <p className='text-sm text-green-600 bg-green-50 p-3 rounded'>{success}</p>}
             <Input type='text' placeholder='用户名' value={name} onChange={e => setName(e.target.value)} required />
             <Input type='email' placeholder='邮箱' value={email} onChange={e => setEmail(e.target.value)} required />
             <Input type='password' placeholder='密码（至少8位）' value={password} onChange={e => setPassword(e.target.value)} required />

@@ -13,6 +13,7 @@ export const users = pgTable('users', {
   emailVerified: boolean('emailVerified').default(false),
   image: text('image'),
   passwordHash: text('passwordHash'),
+  verifyToken: text('verifyToken'), // for email verification
   role: text('role').default('user'), // user | admin
   createdAt: timestamp('createdAt').defaultNow(),
   updatedAt: timestamp('updatedAt').defaultNow(),

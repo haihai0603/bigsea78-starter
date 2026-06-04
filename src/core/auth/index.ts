@@ -5,6 +5,7 @@ import { siteConfig } from '@/config';
 import { db } from '@/core/db';
 import { users } from '@/core/db/schema';
 import { eq } from 'drizzle-orm';
+import { sendVerificationEmail } from '@/core/email';
 
 const JWT_SECRET = siteConfig.auth_secret || process.env.AUTH_SECRET || 'dev-secret-change-in-production';
 const JWT_EXPIRES_IN = '7d';
@@ -18,9 +19,9 @@ export interface AuthUser {
 }
 
 /**
- * Register new user
+ * Register new user - sends verification email
  */
-export async function signUp(email: string, password: string, name?: string): Promise<AuthUser> {
+export async function signUp(email: string, password: string, name?: string): Promise<{ user: AuthUser; verificationSent: boolean }> {
   // Check if user exists
   const existing = await db().select().from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
@@ -30,6 +31,9 @@ export async function signUp(email: string, password: string, name?: string): Pr
   // Hash password
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // Generate verification token (valid for 24h)
+  const verifyToken = jwt.sign({ email, purpose: 'verify' }, JWT_SECRET, { expiresIn: '24h' });
+
   // Create user
   const [newUser] = await db().insert(users).values({
     id: crypto.randomUUID(),
@@ -38,26 +42,38 @@ export async function signUp(email: string, password: string, name?: string): Pr
     passwordHash,
     role: 'user',
     emailVerified: false,
+    verifyToken,
     createdAt: new Date(),
     updatedAt: new Date(),
   }).returning();
 
+  // Send verification email
+  const verificationSent = await sendVerificationEmail(email, verifyToken, name);
+
   return {
-    id: newUser.id,
-    email: newUser.email,
-    name: newUser.name,
-    role: newUser.role || 'user',
-    emailVerified: !!newUser.emailVerified,
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role || 'user',
+      emailVerified: false,
+    },
+    verificationSent,
   };
 }
 
 /**
- * Sign in user
+ * Sign in user - requires email verification
  */
 export async function signIn(email: string, password: string): Promise<{ user: AuthUser; token: string }> {
   const [dbUser] = await db().select().from(users).where(eq(users.email, email)).limit(1);
   if (!dbUser || !dbUser.passwordHash) {
     throw new Error('Invalid email or password');
+  }
+
+  // Check email verification
+  if (!dbUser.emailVerified) {
+    throw new Error('请先验证邮箱后再登录');
   }
 
   const valid = await bcrypt.compare(password, dbUser.passwordHash);
