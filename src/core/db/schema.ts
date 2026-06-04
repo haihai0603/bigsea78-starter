@@ -6,7 +6,7 @@ import { pgTable, text, timestamp, boolean, integer, jsonb } from 'drizzle-orm/p
 
 // === Auth tables (Better Auth expects: singular table names, camelCase columns) ===
 
-export const user = pgTable('user', {
+export const users = pgTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
@@ -18,9 +18,9 @@ export const user = pgTable('user', {
   updatedAt: timestamp('updatedAt').defaultNow(),
 });
 
-export const session = pgTable('session', {
+export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
-  userId: text('userId').references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('userId').references(() => users.id, { onDelete: 'cascade' }),
   token: text('token').notNull().unique(),
   expiresAt: timestamp('expiresAt').notNull(),
   ipAddress: text('ipAddress'),
@@ -31,7 +31,7 @@ export const session = pgTable('session', {
 
 export const account = pgTable('account', {
   id: text('id').primaryKey(),
-  userId: text('userId').references(() => user.id, { onDelete: 'cascade' }),
+  userId: text('userId').references(() => users.id, { onDelete: 'cascade' }),
   accountId: text('accountId').notNull(),
   providerId: text('providerId').notNull(),
   accessToken: text('accessToken'),
@@ -73,7 +73,7 @@ export const products = pgTable('products', {
 
 export const orders = pgTable('orders', {
   id: text('id').primaryKey(),
-  userId: text('userId').references(() => user.id).notNull(),
+  userId: text('userId').references(() => users.id).notNull(),
   productId: text('productId').references(() => products.id).notNull(),
   orderNo: text('orderNo').notNull().unique(),
   status: text('status').notNull().default('pending'), // pending|paid|failed|refunded
@@ -89,7 +89,7 @@ export const orders = pgTable('orders', {
 export const downloads = pgTable('downloads', {
   id: text('id').primaryKey(),
   orderId: text('orderId').references(() => orders.id).notNull(),
-  userId: text('userId').references(() => user.id).notNull(),
+  userId: text('userId').references(() => users.id).notNull(),
   token: text('token').notNull().unique(), // download token
   expiresAt: timestamp('expiresAt').notNull(),
   downloadCount: integer('downloadCount').notNull().default(0),

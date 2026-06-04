@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { siteConfig } from '@/config';
 import { db } from '@/core/db';
-import { user } from '@/core/db/schema';
+import { users } from '@/core/db/schema';
 import { eq } from 'drizzle-orm';
 
 const JWT_SECRET = siteConfig.auth_secret || process.env.AUTH_SECRET || 'dev-secret-change-in-production';
@@ -22,7 +22,7 @@ export interface AuthUser {
  */
 export async function signUp(email: string, password: string, name?: string): Promise<AuthUser> {
   // Check if user exists
-  const existing = await db().select().from(user).where(eq(user.email, email)).limit(1);
+  const existing = await db().select().from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0) {
     throw new Error('Email already registered');
   }
@@ -31,10 +31,10 @@ export async function signUp(email: string, password: string, name?: string): Pr
   const passwordHash = await bcrypt.hash(password, 10);
 
   // Create user
-  const [newUser] = await db().insert(user).values({
+  const [newUser] = await db().insert(users).values({
     id: crypto.randomUUID(),
     email,
-    name: name || null,
+    name: name || email.split('@')[0],
     passwordHash,
     role: 'user',
     emailVerified: false,
@@ -55,7 +55,7 @@ export async function signUp(email: string, password: string, name?: string): Pr
  * Sign in user
  */
 export async function signIn(email: string, password: string): Promise<{ user: AuthUser; token: string }> {
-  const [dbUser] = await db().select().from(user).where(eq(user.email, email)).limit(1);
+  const [dbUser] = await db().select().from(users).where(eq(users.email, email)).limit(1);
   if (!dbUser || !dbUser.passwordHash) {
     throw new Error('Invalid email or password');
   }

@@ -1,5 +1,5 @@
 // Sign in - authenticate user
-import { signIn, createAuthCookie } from '@/core/auth';
+import { signIn } from '@/core/auth';
 import { respData, respErr } from '@/shared/lib/resp';
 
 export async function POST(request: Request) {
@@ -13,14 +13,14 @@ export async function POST(request: Request) {
 
     const { user, token } = await signIn(email, password);
 
-    const headers = new Headers();
-    headers.set('Set-Cookie', createAuthCookie(token));
-    headers.set('Content-Type', 'application/json');
-
-    return new Response(JSON.stringify(respData({ user })), {
-      status: 200,
-      headers,
+    const response = respData({ user });
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
     });
+    return response;
   } catch (e: any) {
     return respErr(e.message || 'Sign in failed');
   }

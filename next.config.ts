@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  outputFileTracingRoot: './',
   serverExternalPackages: [
     "kysely",
     "@better-auth/kysely-adapter",
