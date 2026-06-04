@@ -12,7 +12,9 @@ export async function POST(request: Request) {
       return respErr('Email and password are required', 400);
     }
 
+    console.log('[SignIn] attempting:', email);
     const { user, token } = await signIn(email, password);
+    console.log('[SignIn] success, token length:', token.length, 'user:', user.email);
 
     const response = NextResponse.json({ code: 0, data: { user } });
     response.cookies.set('auth_token', token, {
@@ -22,8 +24,10 @@ export async function POST(request: Request) {
       maxAge: 7 * 24 * 60 * 60,
       path: '/',
     });
+    console.log('[SignIn] cookie set, returning response');
     return response;
   } catch (e: any) {
+    console.error('[SignIn] error:', e.message);
     return respErr(e.message || 'Sign in failed');
   }
 }
