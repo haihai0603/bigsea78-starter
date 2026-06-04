@@ -2,12 +2,12 @@
 // This is the ONLY place that imports drizzle query builders
 
 import { db } from './index';
-import { user, products, orders, downloads, permissions, rolePermissions } from './schema';
+import { users, products, orders, downloads, permissions, rolePermissions } from './schema';
 import { eq, and, desc, count, like, sql } from 'drizzle-orm';
 import type { Product, Order, Download, User } from './schema-types';
 
-// Aliases for convenience
-const users = user;
+// Aliases for convenience (users already plural in schema)
+// const users = user;
 
 // === Users ===
 
