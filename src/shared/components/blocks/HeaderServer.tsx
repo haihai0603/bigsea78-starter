@@ -21,6 +21,7 @@ export function Header() {
     fetch('/api/auth/session', { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
+        console.log('[Header] Session response:', JSON.stringify(data));
         setUser(data.user || null);
         setLoading(false);
       })
