@@ -4,7 +4,10 @@ import { respData, respErr } from '@/shared/lib/resp';
 
 export async function GET(request: Request) {
   try {
+    const cookie = request.headers.get('cookie') || '';
+    console.log('[Session] cookie header:', cookie.substring(0, 100));
     const user = await getCurrentUser(request);
+    console.log('[Session] getCurrentUser result:', user?.email || null);
     if (!user) {
       return respData({ user: null, session: null });
     }
@@ -20,6 +23,7 @@ export async function GET(request: Request) {
       session: { user },
     });
   } catch (e: any) {
+    console.error('[Session] error:', e);
     return respErr(e.message);
   }
 }

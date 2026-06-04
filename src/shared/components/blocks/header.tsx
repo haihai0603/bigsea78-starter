@@ -21,9 +21,10 @@ export function Header() {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    fetch('/api/auth/session')
+    fetch('/api/auth/session', { credentials: 'include' })
       .then((res) => res.json())
       .then((data) => {
+        console.log('[Header] session response:', data);
         if (data?.user) setUser(data.user);
       })
       .catch(() => {});
