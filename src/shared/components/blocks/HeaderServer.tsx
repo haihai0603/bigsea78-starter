@@ -16,27 +16,14 @@ export function Header() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('[Header] Render - user:', user, 'loading:', loading);
-
   useEffect(() => {
-    console.log('[Header] useEffect running...');
     fetch('/api/auth/session', { credentials: 'include' })
-      .then(res => {
-        console.log('[Header] Response status:', res.status);
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
-        console.log('[Header] Session response:', JSON.stringify(data));
-        const userData = data.data?.user || null;
-        console.log('[Header] Setting user to:', userData);
-        setUser(userData);
+        setUser(data.data?.user || null);
         setLoading(false);
-        console.log('[Header] After setUser - user state should update');
       })
-      .catch(err => {
-        console.error('[Header] Fetch error:', err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   async function handleLogout() {
