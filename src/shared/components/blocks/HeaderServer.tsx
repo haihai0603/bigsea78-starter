@@ -1,5 +1,3 @@
-'use server';
-
 import { cookies } from 'next/headers';
 import { site } from '@/site/config';
 import { Button } from '@/shared/components/ui/button';
