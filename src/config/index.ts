@@ -23,8 +23,8 @@ export const siteConfig = {
   auth_url: process.env.AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || '',
   google_client_id: process.env.GOOGLE_CLIENT_ID ?? '',
   google_client_secret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-  github_client_id: process.env.GITHUB_CLIENT_ID ?? '',
-  github_client_secret: process.env.GITHUB_CLIENT_SECRET ?? '',
+  github_client_id: process.env.GITHUB_CLIENT_ID ?? 'Ov23litYuUXBt5RBeS1M',
+  github_client_secret: process.env.GITHUB_CLIENT_SECRET ?? '0b8e131a8b982e846af6b66d959cc1bc52b4e490',
 
   // === 支付 ===
   stripe_secret_key: process.env.STRIPE_SECRET_KEY ?? '',
