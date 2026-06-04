@@ -35,7 +35,8 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
 }
 
 export function sendVerificationEmail(email: string, token: string, name?: string): Promise<boolean> {
-  const verifyUrl = `${siteConfig.url}/api/auth/verify-email?token=${token}`;
+  const baseUrl = siteConfig.app_url || process.env.NEXT_PUBLIC_APP_URL || 'https://bigsea78.top';
+  const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
 
   return sendEmail({
     to: email,
