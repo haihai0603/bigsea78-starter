@@ -1,6 +1,7 @@
 // Sign in - authenticate user
 import { signIn } from '@/core/auth';
-import { respData, respErr } from '@/shared/lib/resp';
+import { respErr } from '@/shared/lib/resp';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
 
     const { user, token } = await signIn(email, password);
 
-    const response = respData({ user });
+    const response = NextResponse.json({ code: 0, data: { user } });
     response.cookies.set('auth_token', token, {
       httpOnly: true,
       sameSite: 'lax',

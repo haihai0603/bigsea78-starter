@@ -74,8 +74,17 @@ export function Header() {
                   </a>
                 ))}
                 <hr />
-                <a href='/auth/login' className='text-base' onClick={() => setOpen(false)}>登录</a>
-                <a href='/auth/register' className='text-base' onClick={() => setOpen(false)}>注册</a>
+                {user ? (
+                  <>
+                    <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
+                    <Button variant='ghost' size='sm' onClick={handleLogout} className='justify-start px-0'>退出登录</Button>
+                  </>
+                ) : (
+                  <>
+                    <a href='/auth/login' className='text-base' onClick={() => setOpen(false)}>登录</a>
+                    <a href='/auth/register' className='text-base' onClick={() => setOpen(false)}>注册</a>
+                  </>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
