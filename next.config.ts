@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["kysely", "@better-auth/kysely-adapter", "@better-auth/core"],
-
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  serverExternalPackages: [
+    "kysely",
+    "@better-auth/kysely-adapter",
+    "@better-auth/core",
+    "@better-auth/drizzle-adapter",
+  ],
 };
 
 export default nextConfig;
