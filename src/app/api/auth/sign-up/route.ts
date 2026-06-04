@@ -15,14 +15,14 @@ export async function POST(request: Request) {
       return respErr('Password must be at least 6 characters', 400);
     }
 
-    const { user, verificationSent } = await signUp(email, password, name);
+    const { verificationSent } = await signUp(email, password, name);
+
+    if (!verificationSent) {
+      return respErr('验证邮件发送失败，请稍后重试或联系管理员', 500);
+    }
 
     return respData({
-      user,
-      message: verificationSent
-        ? '注册成功！请查收邮箱验证邮件'
-        : '注册成功，但邮件发送失败，请联系管理员',
-      verificationSent,
+      message: '验证邮件已发送，请查收邮箱并点击验证链接完成注册',
     });
   } catch (e: any) {
     if (e.message.includes('already registered')) {
