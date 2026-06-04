@@ -27,9 +27,12 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      console.error('[Resend] Email send failed:', res.status, data);
+    }
     return res.ok && data.id;
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error('[Resend] Email send exception:', error);
     return false;
   }
 }
