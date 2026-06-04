@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { siteConfig } from '@/config';
 import { db } from '@/core/db';
-import { users } from '@/core/db/schema';
+import { user } from '@/core/db/schema';
 import { eq } from 'drizzle-orm';
 
 const JWT_SECRET = siteConfig.auth_secret || process.env.AUTH_SECRET || 'dev-secret-change-in-production';
@@ -22,7 +22,7 @@ export interface AuthUser {
  */
 export async function signUp(email: string, password: string, name?: string): Promise<AuthUser> {
   // Check if user exists
-  const existing = await db().select().from(users).where(eq(users.email, email)).limit(1);
+  const existing = await db().select().from(user).where(eq(user.email, email)).limit(1);
   if (existing.length > 0) {
     throw new Error('Email already registered');
   }
@@ -31,7 +31,7 @@ export async function signUp(email: string, password: string, name?: string): Pr
   const passwordHash = await bcrypt.hash(password, 10);
 
   // Create user
-  const [user] = await db().insert(users).values({
+  const [newUser] = await db().insert(user).values({
     id: crypto.randomUUID(),
     email,
     name: name || null,
@@ -43,11 +43,11 @@ export async function signUp(email: string, password: string, name?: string): Pr
   }).returning();
 
   return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role || 'user',
-    emailVerified: !!user.emailVerified,
+    id: newUser.id,
+    email: newUser.email,
+    name: newUser.name,
+    role: newUser.role || 'user',
+    emailVerified: !!newUser.emailVerified,
   };
 }
 
@@ -55,26 +55,26 @@ export async function signUp(email: string, password: string, name?: string): Pr
  * Sign in user
  */
 export async function signIn(email: string, password: string): Promise<{ user: AuthUser; token: string }> {
-  const [user] = await db().select().from(users).where(eq(users.email, email)).limit(1);
-  if (!user || !user.passwordHash) {
+  const [dbUser] = await db().select().from(user).where(eq(user.email, email)).limit(1);
+  if (!dbUser || !dbUser.passwordHash) {
     throw new Error('Invalid email or password');
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  const valid = await bcrypt.compare(password, dbUser.passwordHash);
   if (!valid) {
     throw new Error('Invalid email or password');
   }
 
   const authUser: AuthUser = {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role || 'user',
-    emailVerified: !!user.emailVerified,
+    id: dbUser.id,
+    email: dbUser.email,
+    name: dbUser.name,
+    role: dbUser.role || 'user',
+    emailVerified: !!dbUser.emailVerified,
   };
 
   const token = jwt.sign(
-    { sub: user.id, email: user.email, role: user.role },
+    { sub: dbUser.id, email: dbUser.email, role: dbUser.role },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -125,4 +125,34 @@ export async function requireAuth(request: Request): Promise<AuthUser> {
  */
 export function createAuthCookie(token: string): string {
   return `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`;
+}
+
+/**
+ * Better Auth compatible shim (replaces real Better Auth)
+ * Provides the same { api: { getSession(...) } } interface
+ */
+export async function getAuth() {
+  return {
+    api: {
+      getSession: async ({ headers }: { headers: Headers }) => {
+        try {
+          const user = await getCurrentUser(new Request('http://localhost', { headers }));
+          if (!user) return null;
+          return {
+            user: {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              emailVerified: user.emailVerified,
+              image: null as string | null,
+              role: user.role,
+            },
+            session: { user },
+          };
+        } catch {
+          return null;
+        }
+      },
+    },
+  };
 }

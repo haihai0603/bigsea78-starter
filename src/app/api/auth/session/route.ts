@@ -1,15 +1,24 @@
-// Auth session API - get current session (for client-side auth checks)
-import { getAuth } from '@/core/auth';
+// Auth session API - get current user from JWT token
+import { getCurrentUser } from '@/core/auth';
 import { respData, respErr } from '@/shared/lib/resp';
 
 export async function GET(request: Request) {
   try {
-    const auth = await getAuth();
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session) {
+    const user = await getCurrentUser(request);
+    if (!user) {
       return respData({ user: null, session: null });
     }
-    return respData({ user: session.user, session: session.session });
+    return respData({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        image: null,
+        role: user.role,
+      },
+      session: { user },
+    });
   } catch (e: any) {
     return respErr(e.message);
   }

@@ -2,9 +2,9 @@
 // Only two roles: admin | user
 
 import { requireAuth } from '@/core/auth';
-import type { User } from '@/core/db/schema-types';
+import type { AuthUser } from '@/core/auth';
 
-export async function requireAdmin(request: Request): Promise<User> {
+export async function requireAdmin(request: Request): Promise<AuthUser> {
   const user = await requireAuth(request);
   if (user.role !== 'admin') {
     throw new Error('Forbidden: admin access required');
@@ -15,7 +15,7 @@ export async function requireAdmin(request: Request): Promise<User> {
 export async function requirePermission(
   request: Request,
   code: string
-): Promise<User> {
+): Promise<AuthUser> {
   const user = await requireAuth(request);
   // Admin has all permissions
   if (user.role === 'admin') return user;
