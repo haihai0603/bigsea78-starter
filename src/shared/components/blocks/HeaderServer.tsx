@@ -1,34 +1,51 @@
-import { cookies } from 'next/headers';
-import { site } from '@/site/config';
+'use client';
+
 import { Button } from '@/shared/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/shared/components/ui/sheet';
-import HeaderClient from './HeaderClient';
-import { verifyToken, getUserById } from '@/core/auth';
+import { useState, useEffect } from 'react';
+import { site } from '@/site/config';
 
-async function getUser() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
-    if (!token) return null;
-
-    const payload = verifyToken(token);
-    if (!payload) return null;
-
-    const userId = payload.id;
-    if (!userId) return null;
-
-    const user = await getUserById(userId);
-    if (!user || !user.emailVerified) return null;
-
-    return user;
-  } catch (e) {
-    console.error('[getUser] error:', e);
-    return null;
-  }
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
 }
 
-export async function Header() {
-  const user = await getUser();
+export function Header() {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 客户端获取用户状态
+    fetch('/api/auth/session', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        setUser(data.user || null);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function handleLogout() {
+    await fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' });
+    window.location.href = '/';
+  }
+
+  if (loading) {
+    return (
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-6">
+            <a href="/" className="text-lg font-bold">{site.name}</a>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 animate-pulse bg-muted rounded" />
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -44,7 +61,17 @@ export async function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <HeaderClient user={user} />
+          {user ? (
+            <>
+              <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
+              <Button variant='ghost' size='sm' onClick={handleLogout}>退出登录</Button>
+            </>
+          ) : (
+            <>
+              <Button variant='ghost' size='sm' onClick={() => { window.location.href = '/auth/login'; }}>登录</Button>
+              <Button size='sm' onClick={() => { window.location.href = '/auth/register'; }}>注册</Button>
+            </>
+          )}
 
           {/* Mobile menu */}
           <Sheet>
