@@ -178,3 +178,28 @@ export async function getAuth() {
     },
   };
 }
+
+/**
+ * Get user by ID (for Server Components)
+ */
+export async function getUserById(id: string): Promise<AuthUser | null> {
+  try {
+    const { db } = await import('@/core/db');
+    const { users } = await import('@/core/db/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const result = await db().select().from(users).where(eq(users.id, id)).limit(1);
+    if (!result[0]) return null;
+    
+    const u = result[0];
+    return {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role || 'user',
+      emailVerified: !!u.emailVerified,
+    };
+  } catch {
+    return null;
+  }
+}

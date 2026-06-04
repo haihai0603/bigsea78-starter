@@ -4,31 +4,25 @@ import { site } from '@/site/config';
 import { Button } from '@/shared/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/shared/components/ui/sheet';
 import HeaderClient from './HeaderClient';
+import { verifyToken, getUserById } from '@/core/auth';
 
 async function getUser() {
   try {
-    const { verifyJWT } = await import('@/core/auth/jwt');
-    const { getUserById } = await import('@/core/db/queries');
-
     // In Next.js App Router, cookies() is async
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
     if (!token) return null;
 
-    const payload = await verifyJWT(token);
+    const payload = verifyToken(token);
     if (!payload) return null;
 
-    const user = await getUserById(payload.userId);
+    const user = await getUserById(payload.sub || payload.userId);
     if (!user || !user.emailVerified) return null;
 
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role || 'user',
-    };
-  } catch {
+    return user;
+  } catch (e) {
+    console.error('[getUser] error:', e);
     return null;
   }
 }
