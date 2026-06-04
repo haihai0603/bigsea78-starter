@@ -1,6 +1,6 @@
-// Post-install patch: fix better-auth kysely-adapter compatibility with kysely 0.29
-// better-auth@1.6.13's kysely-adapter imports DEFAULT_MIGRATION_TABLE which was removed in kysely 0.29
-// This script replaces the import references with string literals
+// Post-install patch: fix better-auth kysely-adapter + kysely 0.29 compatibility
+// 1. Remove DEFAULT_MIGRATION_TABLE/DEFAULT_MIGRATION_LOCK_TABLE imports that don't exist in kysely 0.29
+// 2. Fix migrator.js syntax error (?? lockRowId: → ?? "kysely_migration_lock",)
 
 const fs = require('fs');
 const path = require('path');
@@ -18,19 +18,25 @@ function patchDir(dir) {
         let content = fs.readFileSync(fullPath, 'utf8');
         let modified = false;
         
-        if (content.includes('DEFAULT_MIGRATION_TABLE')) {
-          // Remove from import statements
+        // Fix DEFAULT_MIGRATION_TABLE references
+        if (content.includes('DEFAULT_MIGRATION_TABLE') && !content.includes('DEFAULT_MIGRATION_LOCK_TABLE')) {
           content = content.replace(/,\s*DEFAULT_MIGRATION_TABLE/g, '');
           content = content.replace(/DEFAULT_MIGRATION_TABLE,\s*/g, '');
-          // Replace usage with unquoted identifier (for export const etc)
-          content = content.replace(/DEFAULT_MIGRATION_TABLE/g, 'kysely_migration');
+          content = content.replace(/DEFAULT_MIGRATION_TABLE/g, '"kysely_migration"');
           modified = true;
         }
         
+        // Fix DEFAULT_MIGRATION_LOCK_TABLE references  
         if (content.includes('DEFAULT_MIGRATION_LOCK_TABLE')) {
           content = content.replace(/,\s*DEFAULT_MIGRATION_LOCK_TABLE/g, '');
           content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE,\s*/g, '');
-          content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE/g, 'kysely_migration_lock');
+          content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE/g, '"kysely_migration_lock"');
+          modified = true;
+        }
+        
+        // Fix migrator.js syntax error: ?? lockRowId: MIGRATION_LOCK_ID
+        if (content.includes('?? lockRowId: MIGRATION_LOCK_ID')) {
+          content = content.replace(/\?\? lockRowId: MIGRATION_LOCK_ID,/g, '?? "kysely_migration_lock",');
           modified = true;
         }
         
@@ -47,7 +53,7 @@ function patchDir(dir) {
 
 const nodeModules = path.join(__dirname, '..', 'node_modules', '.pnpm');
 if (fs.existsSync(nodeModules)) {
-  console.log('Patching kysely-adapter files...');
+  console.log('Patching kysely-adapter/kysely files...');
   patchDir(nodeModules);
   console.log('Done.');
 } else {
