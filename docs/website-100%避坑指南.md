@@ -252,37 +252,85 @@ const token = cookieStore.get('auth_token')?.value;
 
 **定义**：Server 渲染的 HTML 与 Client hydrate 后的结果不一致
 
+**错误表现**：React Error #418 (Hydration mismatch) — 页面能显示，但控制台有红色错误
+
 **常见原因**：
 1. 客户端组件中 `useEffect` 设 state（server 首次渲染为 `null`，client hydrate 后有值）
 2. 访问 `window`/`document`（server 不存在）
 3. 使用 `Math.random()` / `Date.now()`（server/client 结果不同）
+4. Server Component 用 `cookies()` 获取动态数据，Client 渲染时状态不一致
 
-### 我们的案例：Header 登录状态
+### 调试过程记录（我们踩过的弯路）
 
-**现象**：React Error #418 (Hydration mismatch)
+#### ❌ 弯路1: 试图给 SheetTrigger 加 `asChild`
 
-**错误代码**：
+**现象**：React Error #418，定位到 Header 组件
+
+**尝试方案**：给 SheetTrigger 加 `asChild` prop，避免子组件重新渲染
+
+```tsx
+// ❌ 这个方向本身走不通
+<SheetTrigger asChild>
+  <Button variant="ghost">
+    <Menu className="h-5 w-5" />
+  </Button>
+</SheetTrigger>
+```
+
+**报错**：`SheetTrigger does not support asChild prop`
+
+**原因**：项目用的是 `@base-ui/react` 的 Sheet/Slide 组件，不是 Radix UI。`@base-ui/react` 的 SheetTrigger **没有** `asChild` 属性，TypeScript 报错，构建失败。
+
+**教训**：调试前先确认 UI 库类型。报错时仔细看是哪类库的问题。
+
+#### ❌ 弯路2: 直接把 HeaderServer.tsx 改为 Client Component（部分正确）
+
+**改法**：去掉 `async`，加 `'use client'`，用 `useEffect` 获取用户状态
+
 ```tsx
 'use client';
 
+import { useState, useEffect } from 'react';
+
 export function Header() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/auth/session')
+    fetch('/api/auth/session', { credentials: 'include' })
       .then(res => res.json())
-      .then(data => setUser(data.user));
+      .then(data => {
+        setUser(data.data?.user || null);
+        setLoading(false);
+      });
   }, []);
 
-  return (
-    <header>
-      {user ? <span>{user.name}</span> : <button>登录</button>}
-    </header>
-  );
+  // ... 渲染逻辑
 }
 ```
 
-**问题**：Server 渲染时 `user = null`，Client hydrate 后 `user = { name: '...' }` → 不匹配
+**结果**：React Error #418 修复了 ✅，但出现新问题：登录后右上角仍显示"登录/注册"按钮（实际是 `AUTH_SECRET` 问题，见坑4）
+
+**教训**：一个 bug 修好了不代表系统正常，要完整测试登录流程。
+
+### 调试流程图
+
+```
+发现 Error #418
+    ↓
+定位问题组件（Console 堆栈）
+    ↓
+分析渲染不一致的原因
+    ↓
+方案A: Server/Client 拆分（推荐）
+方案B: Client Component + useEffect（临时方案）
+    ↓
+修复后必须测试完整流程
+    ↓
+不只是看 Console 无报错
+    ↓
+确认登录状态正常显示 ✅
+```
 
 ### ✅ 根治方案：Server/Client 拆分
 
