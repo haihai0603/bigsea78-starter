@@ -48,7 +48,13 @@ export async function signUp(email: string, password: string, name?: string): Pr
   }).returning();
 
   // Send verification email
-  const verificationSent = await sendVerificationEmail(email, verifyToken, name);
+  let verificationSent = false;
+  try {
+    verificationSent = await sendVerificationEmail(email, verifyToken, name);
+    console.log('[Auth] sendVerificationEmail result:', verificationSent);
+  } catch (emailError) {
+    console.error('[Auth] sendVerificationEmail exception:', emailError);
+  }
 
   return {
     user: {
