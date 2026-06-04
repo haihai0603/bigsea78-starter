@@ -1,7 +1,7 @@
 import { getProducts } from '@/core/db/queries';
 import { ProductCard } from '@/shared/components/ProductCard';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function ProductsPage() {
   const products = await getProducts({ limit: 50, offset: 0 });

@@ -14,7 +14,7 @@ async function getUser() {
     const payload = verifyToken(token);
     if (!payload) return null;
 
-    const userId = payload.sub || payload.userId;
+    const userId = payload.id;
     if (!userId) return null;
 
     const user = await getUserById(userId);
@@ -48,7 +48,7 @@ export async function Header() {
 
           {/* Mobile menu */}
           <Sheet>
-            <SheetTrigger asChild>
+            <SheetTrigger>
               <Button variant="ghost" size="sm" className="md:hidden">菜单</Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-64">
