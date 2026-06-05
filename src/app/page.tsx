@@ -30,16 +30,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center justify-between px-6 py-4">
-          <h1 className="text-xl font-bold">{site.name}</h1>
-          <nav className="flex gap-4">
-            <Link href="/products" className="text-sm text-muted-foreground hover:text-foreground">产品</Link>
-            <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">关于</Link>
-          </nav>
-        </div>
-      </header>
-
       <main className="flex-1">
         <section className="container mx-auto px-6 py-24 text-center">
           <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
