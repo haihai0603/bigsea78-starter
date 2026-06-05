@@ -114,12 +114,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-
-      <footer className="border-t py-6">
-        <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} {site.name}. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 }
