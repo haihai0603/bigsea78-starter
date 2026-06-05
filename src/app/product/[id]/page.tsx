@@ -5,6 +5,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Separator } from '@/shared/components/ui/separator';
 import { getProductById, getProducts } from '@/core/db/queries';
 import { site } from '@/site/config';
+import { PayButton } from './PayButton';
 
 const CATEGORY_ICONS: Record<string, string> = {
   software: '💻', course: '🎓', ebook: '📖', font: '🔤', audio: '🎵', template: '📐',
@@ -64,17 +65,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          <div className='flex gap-3'>
-            {product.price === 0 ? (
-              <Link href={`/api/auth/sign-up/email?callbackUrl=/api/download?product_id=${product.id}`}>
-                <Button size='lg' className='flex-1'>免费下载</Button>
-              </Link>
-            ) : (
-              <Link href={`/api/payment/checkout?product_id=${product.id}`}>
-                <Button size='lg' className='flex-1'>立即购买</Button>
-              </Link>
-            )}
-          </div>
+          {product.price === 0 ? (
+            <Link href={`/api/auth/sign-up/email?callbackUrl=/api/download?product_id=${product.id}`}>
+              <Button size='lg' className='w-full'>免费下载</Button>
+            </Link>
+          ) : (
+            <PayButton productId={product.id} productName={product.name} />
+          )
 
           <Separator />
 
