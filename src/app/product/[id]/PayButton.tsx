@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/shared/components/ui/button';
 
 interface PayButtonProps {
   productId: string;
@@ -68,6 +67,8 @@ export function PayButton({ productId, productName }: PayButtonProps) {
     }
   }
 
+  const btnStyle = "w-full px-6 py-3 text-base font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
+
   if (showQR && orderInfo) {
     return (
       <div className="border rounded-lg p-6 space-y-4">
@@ -92,14 +93,13 @@ export function PayButton({ productId, productName }: PayButtonProps) {
             <p className="text-sm text-muted-foreground">管理员确认收款后，下载链接将发送到您的注册邮箱</p>
           </div>
         ) : (
-          <Button
-            size="lg"
-            className="w-full"
+          <button
+            className={btnStyle}
             onClick={handlePaid}
             disabled={notifyStatus === 'loading'}
           >
             {notifyStatus === 'loading' ? '提交中...' : '我已完成付款'}
-          </Button>
+          </button>
         )}
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
@@ -109,9 +109,13 @@ export function PayButton({ productId, productName }: PayButtonProps) {
 
   return (
     <div className="space-y-2">
-      <Button size="lg" className="w-full" onClick={handleBuy} disabled={loading}>
+      <button
+        className={btnStyle}
+        onClick={handleBuy}
+        disabled={loading}
+      >
         {loading ? '处理中...' : '立即购买'}
-      </Button>
+      </button>
       {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
