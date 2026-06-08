@@ -2,7 +2,7 @@
 import { siteConfig } from '@/config';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_csVoXT6G_9XCavEoi1FJWEoB1MzD7tWWY';
-const FROM_EMAIL = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@bigsea78.top';
 
 export interface EmailOptions {
   to: string;
