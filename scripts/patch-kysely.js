@@ -1,7 +1,4 @@
-// Post-install patch: fix better-auth kysely-adapter + kysely 0.29 compatibility
-// 1. Remove DEFAULT_MIGRATION_TABLE/DEFAULT_MIGRATION_LOCK_TABLE imports that don't exist in kysely 0.29
-// 2. Fix migrator.js syntax error (?? lockRowId: → ?? "kysely_migration_lock",)
-
+// Post-install patch: skip bun check, only patch files
 const fs = require('fs');
 const path = require('path');
 
@@ -18,7 +15,6 @@ function patchDir(dir) {
         let content = fs.readFileSync(fullPath, 'utf8');
         let modified = false;
         
-        // Fix DEFAULT_MIGRATION_TABLE references
         if (content.includes('DEFAULT_MIGRATION_TABLE') && !content.includes('DEFAULT_MIGRATION_LOCK_TABLE')) {
           content = content.replace(/,\s*DEFAULT_MIGRATION_TABLE/g, '');
           content = content.replace(/DEFAULT_MIGRATION_TABLE,\s*/g, '');
@@ -26,7 +22,6 @@ function patchDir(dir) {
           modified = true;
         }
         
-        // Fix DEFAULT_MIGRATION_LOCK_TABLE references  
         if (content.includes('DEFAULT_MIGRATION_LOCK_TABLE')) {
           content = content.replace(/,\s*DEFAULT_MIGRATION_LOCK_TABLE/g, '');
           content = content.replace(/DEFAULT_MIGRATION_LOCK_TABLE,\s*/g, '');
@@ -34,7 +29,6 @@ function patchDir(dir) {
           modified = true;
         }
         
-        // Fix migrator.js syntax error: ?? lockRowId: MIGRATION_LOCK_ID
         if (content.includes('?? lockRowId: MIGRATION_LOCK_ID')) {
           content = content.replace(/\?\? lockRowId: MIGRATION_LOCK_ID,/g, '?? "kysely_migration_lock",');
           modified = true;
