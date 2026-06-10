@@ -82,6 +82,8 @@ export async function signUp(email: string, password: string, name?: string): Pr
  */
 export async function signIn(email: string, password: string): Promise<{ user: AuthUser; token: string }> {
   const [dbUser] = await db().select().from(users).where(eq(users.email, email)).limit(1);
+  console.log('[SignIn] dbUser raw:', JSON.stringify(dbUser));
+  console.log('[SignIn] emailVerified raw:', dbUser?.emailVerified, 'type:', typeof dbUser?.emailVerified);
   if (!dbUser || !dbUser.passwordHash) {
     throw new Error('Invalid email or password');
   }
