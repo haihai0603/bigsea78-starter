@@ -89,7 +89,10 @@ export async function signIn(email: string, password: string): Promise<{ user: A
   }
 
   // Check email verification
+  console.log('[SignIn] Final check - emailVerified:', JSON.stringify(dbUser.emailVerified), 'type:', typeof dbUser.emailVerified);
   if (!dbUser.emailVerified) {
+    throw new Error(`Please verify email before login (debug: emailVerified=${JSON.stringify(dbUser.emailVerified)}, type=${typeof dbUser.emailVerified})`);
+  }
     throw new Error('请先验证邮箱后再登录');
   }
 
