@@ -1,7 +1,5 @@
-'use client';
-
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { headers } from 'next/headers';
 import { cn } from '@/shared/lib/utils';
 
 const navItems = [
@@ -12,8 +10,11 @@ const navItems = [
   { href: '/admin/settings', label: '系统设置', icon: '⚙️' },
 ];
 
-export function AdminNav() {
-  const pathname = usePathname();
+export async function AdminNav() {
+  const headersList = await headers();
+  const pathname = headersList.get('x-invoke-pathname') || 
+                   headersList.get('x-matched-path') || 
+                   '/admin';
 
   return (
     <nav className='space-y-1'>

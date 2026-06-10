@@ -26,6 +26,9 @@ export default function HeaderClient({ user }: HeaderClientProps) {
     <>
       {user ? (
         <>
+          {user.role === 'admin' && (
+            <Button variant='ghost' size='sm' onClick={() => { window.location.href = '/admin/users'; }}>管理后台</Button>
+          )}
           <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
           <Button variant='ghost' size='sm' onClick={handleLogout}>退出登录</Button>
         </>

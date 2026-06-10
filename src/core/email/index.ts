@@ -1,7 +1,7 @@
 // Email verification service using Resend API
 import { siteConfig } from '@/config';
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_csVoXT6G_9XCavEoi1FJWEoB1MzD7tWWY';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@bigsea78.top';
 
 export interface EmailOptions {
@@ -11,12 +11,18 @@ export interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: EmailOptions): Promise<boolean> {
+  if (!RESEND_API_KEY) {
+    console.error('[Resend] RESEND_API_KEY not set');
+    return false;
+  }
+
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'BigSea78/1.0',
       },
       body: JSON.stringify({
         from: FROM_EMAIL,
@@ -29,8 +35,10 @@ export async function sendEmail({ to, subject, html }: EmailOptions): Promise<bo
     const data = await res.json();
     if (!res.ok) {
       console.error('[Resend] Email send failed:', res.status, data);
+      return false;
     }
-    return res.ok && data.id;
+    console.log('[Resend] Email sent:', data.id);
+    return !!data.id;
   } catch (error) {
     console.error('[Resend] Email send exception:', error);
     return false;

@@ -199,12 +199,15 @@ export async function incrementDownloadCount(token: string): Promise<void> {
 // === Stats ===
 
 export async function getDashboardStats() {
-  const [productCount, orderCount] = await Promise.all([
-    getProductCount(),
-    getOrderCount(),
-  ]);
-  const userCount = (await db().select({ count: count() }).from(users))[0]?.count ?? 0;
-  const recentOrders = await getRecentOrders(5);
+  let productCount = 0;
+  let orderCount = 0;
+  let userCount = 0;
+  let recentOrders: Order[] = [];
+
+  try { productCount = await getProductCount(); } catch {}
+  try { orderCount = await getOrderCount(); } catch {}
+  try { userCount = (await db().select({ count: count() }).from(users))[0]?.count ?? 0; } catch {}
+  try { recentOrders = await getRecentOrders(5); } catch {}
 
   return { productCount, orderCount, userCount, recentOrders };
 }

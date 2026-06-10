@@ -53,6 +53,9 @@ export function Header() {
           {showUserSection ? (
             user ? (
               <>
+                {user.role === 'admin' && (
+                  <a href='/admin/users' className='text-sm text-muted-foreground hover:text-foreground transition-colors'>管理后台</a>
+                )}
                 <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
                 <Button variant='ghost' size='sm' onClick={handleLogout}>退出登录</Button>
               </>
@@ -66,8 +69,8 @@ export function Header() {
 
           {/* Mobile menu */}
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger>
-              <Button variant='ghost' size='sm' className='md:hidden'>菜单</Button>
+            <SheetTrigger className='md:hidden inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-8 px-3'>
+              菜单
             </SheetTrigger>
             <SheetContent side='right' className='w-64'>
               <nav className='flex flex-col gap-4 mt-8'>
@@ -80,8 +83,11 @@ export function Header() {
                 {showUserSection ? (
                   user ? (
                     <>
+                      {user.role === 'admin' && (
+                        <a href='/admin/users' className='text-base hover:text-primary'>管理后台</a>
+                      )}
                       <span className='text-sm text-muted-foreground'>{user.name || user.email}</span>
-                      <Button variant='ghost' size='sm' onClick={handleLogout} className='justify-start px-0'>退出登录</Button>
+                      <a href='#' onClick={handleLogout} className='text-base hover:text-primary'>退出登录</a>
                     </>
                   ) : (
                     <>

@@ -47,21 +47,22 @@ export async function signUp(email: string, password: string, name?: string): Pr
     updatedAt: new Date(),
   }).returning();
 
-  // Send verification email (skip in dev mode)
+  // Always send verification email
   let verificationSent = false;
   const isDev = process.env.NODE_ENV === 'development';
+
+  try {
+    verificationSent = await sendVerificationEmail(email, verifyToken, name);
+    console.log('[Auth] sendVerificationEmail result:', verificationSent);
+  } catch (emailError) {
+    console.error('[Auth] sendVerificationEmail exception:', emailError);
+  }
+
+  // In dev mode, also auto-verify for convenience
+  const effectiveVerified = isDev ? true : (verificationSent ? false : false);
   if (isDev) {
-    // Auto-verify in dev mode
     await db().update(users).set({ emailVerified: true } as any).where(eq(users.id, newUser.id));
     console.log('[Auth] Dev mode: auto-verified user', email);
-    verificationSent = true;
-  } else {
-    try {
-      verificationSent = await sendVerificationEmail(email, verifyToken, name);
-      console.log('[Auth] sendVerificationEmail result:', verificationSent);
-    } catch (emailError) {
-      console.error('[Auth] sendVerificationEmail exception:', emailError);
-    }
   }
 
   return {
@@ -70,7 +71,7 @@ export async function signUp(email: string, password: string, name?: string): Pr
       email: newUser.email,
       name: newUser.name,
       role: newUser.role || 'user',
-      emailVerified: isDev ? true : false,
+      emailVerified: effectiveVerified,
     },
     verificationSent,
   };

@@ -17,7 +17,7 @@ export default async function AdminLayout({
   } catch {}
 
   if (!session?.user) {
-    redirect('/api/auth/sign-in/email?callbackUrl=/admin');
+    redirect('/auth/login?callbackUrl=/admin');
   }
 
   // Role check
@@ -29,7 +29,7 @@ export default async function AdminLayout({
 
   return (
     <div className='min-h-screen flex'>
-      <aside className='w-60 border-r bg-muted/30 p-4 hidden md:flex flex-col'>
+      <aside className='w-60 border-r bg-muted/30 p-4 flex flex-col'>
         <div className='font-bold text-lg mb-6'>管理后台</div>
         <AdminNav />
       </aside>

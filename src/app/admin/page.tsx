@@ -11,18 +11,19 @@ export default async function AdminDashboard() {
     { label: '产品总数', value: stats.productCount, icon: '📦', href: '/admin/products' },
     { label: '订单总数', value: stats.orderCount, icon: '📋', href: '/admin/orders' },
     { label: '用户总数', value: stats.userCount, icon: '👥', href: '/admin/users' },
-    { label: '总收入', value: '¥0.00', icon: '💰', href: '/admin/orders' },
+    { label: '总收入', value: '¥0.00', icon: '💰', href: '/admin/settings' },
   ];
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6' suppressHydrationWarning>
       <h1 className='text-2xl font-bold'>仪表盘</h1>
 
       {/* Stats Grid */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
         {statCards.map((card) => (
-          <Link key={card.href} href={card.href}>
-            <Card className='p-4 hover:shadow-md transition-shadow cursor-pointer'>
+          <div key={card.label} className='cursor-pointer'>
+            <Link href={card.href}>
+            <Card className='p-4 hover:shadow-md transition-shadow'>
               <div className='flex items-center justify-between'>
                 <div>
                   <p className='text-sm text-muted-foreground'>{card.label}</p>
@@ -31,7 +32,8 @@ export default async function AdminDashboard() {
                 <span className='text-3xl'>{card.icon}</span>
               </div>
             </Card>
-          </Link>
+            </Link>
+          </div>
         ))}
       </div>
 
@@ -77,8 +79,8 @@ export default async function AdminDashboard() {
                       {order.status === 'paid' ? '已支付' : order.status === 'pending' ? '待支付' : order.status}
                     </span>
                   </td>
-                  <td className='p-3 text-muted-foreground'>
-                    {new Date(order.createdAt).toLocaleDateString('zh-CN')}
+                  <td className='p-3 text-muted-foreground' suppressHydrationWarning>
+                    {new Date(order.createdAt).toISOString().split('T')[0]}
                   </td>
                 </tr>
               ))}
