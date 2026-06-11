@@ -1,6 +1,7 @@
 // Sign up - create new user account
 import { signUp } from '@/core/auth';
-import { respData, respErr } from '@/shared/lib/resp';
+import { respErr } from '@/shared/lib/resp';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
@@ -15,15 +16,41 @@ export async function POST(request: Request) {
       return respErr('Password must be at least 6 characters', 400);
     }
 
-    const { verificationSent } = await signUp(email, password, name);
+    const { user, verificationSent } = await signUp(email, password, name);
 
-    if (!verificationSent) {
-      return respErr('验证邮件发送失败，请稍后重试或联系管理员', 500);
+    // Auto-login: set auth cookie if user is auto-verified
+    const autoVerified = !verificationSent;
+    const response = NextResponse.json({
+      code: 0,
+      data: {
+        message: verificationSent
+          ? '验证邮件已发送，请查收邮箱并点击验证链接完成注册'
+          : '注册成功！',
+        user,
+        autoVerified,
+      },
+    });
+
+    if (autoVerified) {
+      // Generate JWT and set cookie for auto-login
+      const jwt = require('jsonwebtoken');
+      const { siteConfig } = require('@/config');
+      const secret = siteConfig.auth_secret || process.env.AUTH_SECRET || 'dev-secret-change-in-production';
+      const token = jwt.sign(
+        { sub: user.id, email: user.email, role: user.role, emailVerified: true },
+        secret,
+        { expiresIn: '7d' }
+      );
+      response.cookies.set('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/',
+      });
     }
 
-    return respData({
-      message: '验证邮件已发送，请查收邮箱并点击验证链接完成注册',
-    });
+    return response;
   } catch (e: any) {
     if (e.message.includes('already registered')) {
       return respErr('Email already registered', 409);

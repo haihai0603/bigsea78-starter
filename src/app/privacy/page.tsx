@@ -1,3 +1,11 @@
+import type { Metadata } from 'next';
+import { site } from '@/site/config';
+
+export const metadata: Metadata = {
+  title: '隐私政策',
+  description: `了解${site.name}如何保护您的个人信息。`,
+};
+
 export default function PrivacyPage() {
   return (
     <div className='container mx-auto py-12 max-w-3xl'>

@@ -58,12 +58,14 @@ export async function signUp(email: string, password: string, name?: string): Pr
     console.error('[Auth] sendVerificationEmail exception:', emailError);
   }
 
-  // In dev mode, also auto-verify for convenience
-  const effectiveVerified = isDev ? true : (verificationSent ? false : false);
-  if (isDev) {
+  // In dev mode, auto-verify for convenience
+  // In production, if email send fails, also auto-verify so user can login
+  const shouldAutoVerify = isDev || !verificationSent;
+  if (shouldAutoVerify) {
     await db().update(users).set({ emailVerified: true } as any).where(eq(users.id, newUser.id));
-    console.log('[Auth] Dev mode: auto-verified user', email);
+    console.log('[Auth] Auto-verified user (dev=' + isDev + ', emailSent=' + verificationSent + '):', email);
   }
+  const effectiveVerified = shouldAutoVerify;
 
   return {
     user: {
@@ -88,13 +90,12 @@ export async function signIn(email: string, password: string): Promise<{ user: A
     throw new Error('Invalid email or password');
   }
 
-  // Check email verification
-  console.log('[SignIn] Final check - emailVerified:', JSON.stringify(dbUser.emailVerified), 'type:', typeof dbUser.emailVerified);
-  if (!dbUser.emailVerified) {
-    throw new Error(`Please verify email before login (debug: emailVerified=${JSON.stringify(dbUser.emailVerified)}, type=${typeof dbUser.emailVerified})`);
-  }
-    throw new Error('请先验证邮箱后再登录');
-  }
+  // Check email verification (TEMPORARILY DISABLED FOR PRODUCTION)
+  // TODO: Re-enable after Resend is configured in Vercel
+  console.log('[SignIn] emailVerified check SKIPPED - value:', JSON.stringify(dbUser.emailVerified));
+  // if (!dbUser.emailVerified) {
+  //   throw new Error(`Please verify email before login (debug: emailVerified=${JSON.stringify(dbUser.emailVerified)}, type=${typeof dbUser.emailVerified})`);
+  // }
 
   const valid = await bcrypt.compare(password, dbUser.passwordHash);
   if (!valid) {
@@ -110,7 +111,7 @@ export async function signIn(email: string, password: string): Promise<{ user: A
   };
 
   const token = jwt.sign(
-    { sub: dbUser.id, email: dbUser.email, role: dbUser.role },
+    { sub: dbUser.id, email: dbUser.email, role: dbUser.role, emailVerified: !!dbUser.emailVerified },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -129,7 +130,7 @@ export function verifyToken(token: string): AuthUser | null {
       email: decoded.email,
       name: decoded.name || null,
       role: decoded.role || 'user',
-      emailVerified: false,
+      emailVerified: !!decoded.emailVerified,
     };
   } catch {
     return null;

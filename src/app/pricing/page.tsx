@@ -4,6 +4,12 @@ import { Button } from '@/shared/components/ui/button';
 import { site } from '@/site/config';
 import { getProducts } from '@/core/db/queries';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '定价方案',
+  description: `查看${site.name}的全部产品定价，一次性付费，永久使用，免费更新。`,
+};
 
 export const revalidate = 60;
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ProductImage } from './ProductImage';
 
 interface Product {
   id: string;
@@ -11,18 +12,16 @@ interface Product {
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const priceYuan = (product.price / 100).toFixed(2);
+  const priceYuan = product.price === 0 ? '免费' : `¥${(product.price / 100).toFixed(0)}`;
 
   return (
     <Link href={`/product/${product.id}`} className='block border rounded-lg p-4 hover:shadow-lg transition'>
-      {product.coverImage && (
-        <img src={product.coverImage} alt={product.name} className='w-full h-48 object-cover rounded mb-2' />
-      )}
+      <ProductImage src={product.coverImage} alt={product.name} />
       <h2 className='text-xl font-semibold'>{product.name}</h2>
       {product.description && (
         <p className='text-muted-foreground text-sm line-clamp-2'>{product.description}</p>
       )}
-      <p className='text-lg font-bold mt-2'>¥{priceYuan}</p>
+      <p className='text-lg font-bold mt-2'>{priceYuan}</p>
     </Link>
   );
 }

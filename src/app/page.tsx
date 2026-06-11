@@ -1,32 +1,19 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { site } from '@/site/config';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent } from '@/shared/components/ui/card';
+import { getProducts } from '@/core/db/queries';
+import { ProductImage } from '@/shared/components/ProductImage';
 
-interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  price?: number;
-  image?: string;
-}
+export const revalidate = 60; // ISR: 60秒重新验证
 
-export default function HomePage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/products?limit=6')
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts(Array.isArray(data) ? data : data?.products ?? []);
-      })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
-  }, []);
+export default async function HomePage() {
+  let products: any[] = [];
+  try {
+    products = await getProducts({ active: true, limit: 6 });
+  } catch {
+    // DB unavailable
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -68,31 +55,15 @@ export default function HomePage() {
 
         <section className="container mx-auto px-6 py-16">
           <h3 className="text-2xl font-bold text-center mb-12">热门产品</h3>
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="h-40 bg-muted animate-pulse rounded" />
-                    <div className="mt-4 h-4 bg-muted animate-pulse rounded w-3/4" />
-                    <div className="mt-2 h-4 bg-muted animate-pulse rounded w-1/2" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : products.length > 0 ? (
+          {products.length > 0 ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((p) => (
                 <Card key={p.id}>
                   <CardContent className="p-6">
-                    {p.image && (
-                      <div className="aspect-square bg-muted rounded mb-4 overflow-hidden">
-                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                      </div>
-                    )}
+                    <ProductImage src={p.coverImage} alt={p.name} />
                     <h4 className="font-semibold">{p.name}</h4>
-                    {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
-                    {p.price != null && <p className="mt-2 font-bold">¥{p.price}</p>}
+                    {p.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                    {p.price != null && <p className="mt-2 font-bold">{p.price === 0 ? '免费' : `¥${(p.price / 100).toFixed(0)}`}</p>}
                   </CardContent>
                 </Card>
               ))}

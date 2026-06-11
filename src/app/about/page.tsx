@@ -1,3 +1,11 @@
+import type { Metadata } from 'next';
+import { site } from '@/site/config';
+
+export const metadata: Metadata = {
+  title: '关于我们',
+  description: `了解${site.name}的故事，我们致力于为用户提供优质的数字商品和服务。`,
+};
+
 export default function AboutPage() {
   return (
     <div className='container mx-auto py-12 max-w-3xl'>

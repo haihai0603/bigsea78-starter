@@ -1,0 +1,12 @@
+import psycopg2
+conn = psycopg2.connect('postgresql://neondb_owner:npg_nQYzaOV3cbW1@ep-ancient-rice-aocsm9nj.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require')
+cur = conn.cursor()
+cur.execute("SELECT id, name, download_url FROM products WHERE id = %s", ('0817cf3e-96ba-4151-abb4-1d149843e9d2',))
+r = cur.fetchone()
+print('My product:', r)
+cur.execute("SELECT id, name, download_url FROM products WHERE id = %s", ('3ee82f0d-0524-4a19-b5e5-f0b0681a9219',))
+r2 = cur.fetchone()
+print('Vercel koutu:', r2)
+cur.execute("SELECT count(*) FROM products")
+print('Total:', cur.fetchone()[0])
+conn.close()

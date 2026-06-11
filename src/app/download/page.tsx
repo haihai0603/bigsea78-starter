@@ -1,9 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { getDownloadByToken, incrementDownloadCount, getOrderByNo } from '@/core/db/queries';
-import { getProductById } from '@/core/db/queries';
-import { getPresignedDownloadUrl } from '@/extensions/storage/r2';
-import { site } from '@/site/config';
+import { getDownloadByToken, getProductById } from '@/core/db/queries';
+import { DownloadButton } from './DownloadButton';
 
 const CATEGORY_ICONS: Record<string, string> = {
   software: '💻', course: '🎓', ebook: '📖', font: '🔤', audio: '🎵', template: '📐',
@@ -12,17 +9,15 @@ const CATEGORY_ICONS: Record<string, string> = {
 export default async function DownloadPage({ searchParams }: { searchParams: Promise<{ token?: string; order?: string }> }) {
   const { token, order } = await searchParams;
 
-  // If no token but has order, show pending message
+  // No token but has order - payment pending
   if (!token && order) {
     return (
       <div className='min-h-[60vh] flex items-center justify-center'>
         <Card className='max-w-md w-full'>
-          <CardHeader>
-            <CardTitle>支付处理中</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>支付处理中</CardTitle></CardHeader>
           <CardContent>
             <p className='text-muted-foreground mb-4'>您的支付正在处理中，确认后将发送下载链接到您的邮箱。</p>
-            <Button onClick={() => window.location.href = '/'}>返回首页</Button>
+            <a href='/' className='text-primary hover:underline'>返回首页</a>
           </CardContent>
         </Card>
       </div>
@@ -33,12 +28,10 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
     return (
       <div className='min-h-[60vh] flex items-center justify-center'>
         <Card className='max-w-md w-full'>
-          <CardHeader>
-            <CardTitle>无效的下载链接</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>无效的下载链接</CardTitle></CardHeader>
           <CardContent>
             <p className='text-muted-foreground mb-4'>该下载链接无效或已过期。</p>
-            <Button onClick={() => window.location.href = '/'}>返回首页</Button>
+            <a href='/' className='text-primary hover:underline'>返回首页</a>
           </CardContent>
         </Card>
       </div>
@@ -48,7 +41,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
   // Validate token from DB
   let download: any;
   let product: any;
-  let downloadUrl: string | null = null;
+  let remainingDownloads = 0;
 
   try {
     download = await getDownloadByToken(token);
@@ -60,7 +53,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             <CardHeader><CardTitle>链接不存在</CardTitle></CardHeader>
             <CardContent>
               <p className='text-muted-foreground mb-4'>该下载链接不存在。</p>
-              <Button onClick={() => window.location.href = '/'}>返回首页</Button>
+              <a href='/' className='text-primary hover:underline'>返回首页</a>
             </CardContent>
           </Card>
         </div>
@@ -75,7 +68,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             <CardHeader><CardTitle>链接已过期</CardTitle></CardHeader>
             <CardContent>
               <p className='text-muted-foreground mb-4'>下载链接已过期，请重新购买或联系客服。</p>
-              <Button onClick={() => window.location.href = '/'}>返回首页</Button>
+              <a href='/' className='text-primary hover:underline'>返回首页</a>
             </CardContent>
           </Card>
         </div>
@@ -90,31 +83,43 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             <CardHeader><CardTitle>下载次数已用完</CardTitle></CardHeader>
             <CardContent>
               <p className='text-muted-foreground mb-4'>该链接已达到最大下载次数（{download.maxDownloads}次），如需帮助请联系客服。</p>
-              <Button onClick={() => window.location.href = '/'}>返回首页</Button>
+              <a href='/' className='text-primary hover:underline'>返回首页</a>
             </CardContent>
           </Card>
         </div>
       );
     }
 
-    // Get order → product → download URL
-    const order = await getOrderByNo(
-      (await import('@/core/db/queries')).getOrderByNo.name // just get order from download
+    // Get product info from order
+    try {
+      // download.orderId is the order's ID, not orderNo
+      // Need to find order by ID directly
+      const { db } = await import('@/core/db');
+      const { orders } = await import('@/core/db/schema');
+      const { eq } = await import('drizzle-orm');
+      const orderRows = await db().select().from(orders).where(eq(orders.id, download.orderId)).limit(1);
+      const dbOrder = orderRows[0];
+      if (dbOrder) {
+        product = await getProductById(dbOrder.productId);
+      }
+    } catch {}
+
+    product = product || { name: '数字产品', category: 'software' };
+    remainingDownloads = download.maxDownloads - download.downloadCount - 1;
+
+  } catch {
+    return (
+      <div className='min-h-[60vh] flex items-center justify-center'>
+        <Card className='max-w-md w-full'>
+          <CardHeader><CardTitle>系统错误</CardTitle></CardHeader>
+          <CardContent>
+            <p className='text-muted-foreground mb-4'>无法处理下载请求，请稍后重试。</p>
+            <a href='/' className='text-primary hover:underline'>返回首页</a>
+          </CardContent>
+        </Card>
+      </div>
     );
-
-    // Simplified: get product info
-    // For now, use a simple approach
-    product = { name: '数字产品', category: 'software', downloadUrl: '' };
-
-    // Increment download count
-    await incrementDownloadCount(token);
-
-  } catch (err) {
-    // DB not configured or error - show mock download
-    downloadUrl = null;
   }
-
-  const remainingDownloads = download ? download.maxDownloads - download.downloadCount - 1 : 0;
 
   return (
     <div className='min-h-[60vh] flex items-center justify-center'>
@@ -131,24 +136,7 @@ export default async function DownloadPage({ searchParams }: { searchParams: Pro
             </div>
           </div>
 
-          <Button
-            className='w-full'
-            size='lg'
-            onClick={async () => {
-              try {
-                // Call download API to get presigned URL
-                const res = await fetch('/api/download?token=' + token);
-                const data = await res.json();
-                if (data.data?.url) {
-                  window.location.href = data.data.url;
-                }
-              } catch {
-                alert('下载失败，请稍后重试');
-              }
-            }}
-          >
-            立即下载
-          </Button>
+          <DownloadButton token={token} />
 
           <div className='text-center space-y-1'>
             <p className='text-xs text-muted-foreground'>

@@ -1,4 +1,11 @@
 import { getProducts } from '@/core/db/queries';
+import { site } from '@/site/config';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '所有产品',
+  description: `浏览${site.name}的全部数字商品，包括软件、课程、电子书、字体等优质资源。`,
+};
 import { ProductCard } from '@/shared/components/ProductCard';
 
 export const dynamic = 'force-dynamic';
