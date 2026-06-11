@@ -15,6 +15,11 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Get callbackUrl from URL params
+  const callbackUrl = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('callbackUrl') || '/'
+    : '/';
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -38,7 +43,11 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        // Show check-email state instead of "success"
+        if (data.data?.autoVerified) {
+          // Auto-verified, redirect to callbackUrl (already logged in)
+          window.location.href = callbackUrl;
+          return;
+        }
         setSuccess('EMAIL_SENT');
       } else {
         setError(data.message || '注册失败');

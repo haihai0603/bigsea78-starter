@@ -1,5 +1,6 @@
 // Download API route
 // GET: handle file downloads with token or product_id
+// For large files (OSS URLs), uses 302 redirect instead of proxying
 
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -8,11 +9,12 @@ import {
   getProductById,
 } from '@/core/db/queries';
 import { getOrderByNo } from '@/core/db/queries';
+import { getCurrentUser } from '@/core/auth';
 import { respErr } from '@/shared/lib/resp';
 import { siteConfig } from '@/config';
 
-// Runtime: edge for better performance
-export const runtime = 'edge';
+// Use node runtime for large file handling (edge has 30s timeout)
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
@@ -27,7 +29,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
     const productId = searchParams.get('product_id');
-    const userId = searchParams.get('user');
 
     // Case 1: Token-based download (paid orders)
     if (token) {
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest) {
 
     // Case 2: Free product download
     if (productId) {
-      return await handleFreeDownload(productId, userId, request);
+      const user = await getCurrentUser(request);
+      return await handleFreeDownload(productId, user, request);
     }
 
     return respErr('Missing required parameters: token or product_id', 400);
@@ -91,8 +93,15 @@ async function handleTokenDownload(token: string): Promise<NextResponse> {
   // Increment download count
   await incrementDownloadCount(token);
 
-  // Return file stream
+  // For HTTP URLs (OSS), redirect directly — no proxy for large files
+  if (product.downloadUrl.startsWith('http')) {
+    await incrementDownloadCount(token);
+    return NextResponse.redirect(product.downloadUrl);
+  }
+
+  // Return file stream for R2/local keys
   return await streamFile(product.downloadUrl, product.name);
+}
 }
 
 /**
@@ -101,7 +110,7 @@ async function handleTokenDownload(token: string): Promise<NextResponse> {
  */
 async function handleFreeDownload(
   productId: string,
-  userId: string | null,
+  user: any,
   request: NextRequest
 ): Promise<NextResponse> {
   // Get product
@@ -115,12 +124,11 @@ async function handleFreeDownload(
     return respErr('This product requires payment', 402);
   }
 
-  // For free products, user should be logged in
-  if (!userId) {
-    // Redirect to sign up with callback
+  // For free products, user must be logged in
+  if (!user) {
     const callbackUrl = `/api/download?product_id=${productId}`;
     return NextResponse.redirect(
-      new URL(`/api/auth/sign-up/email?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
+      new URL(`/auth/register?callbackUrl=${encodeURIComponent(callbackUrl)}`, request.url)
     );
   }
 
@@ -128,7 +136,12 @@ async function handleFreeDownload(
     return respErr('Product download not available', 404);
   }
 
-  // Return file stream for free product
+  // For HTTP URLs (OSS), redirect directly — no proxy for large files
+  if (product.downloadUrl.startsWith('http')) {
+    return NextResponse.redirect(product.downloadUrl);
+  }
+
+  // Return file stream for R2/local keys
   return await streamFile(product.downloadUrl, product.name);
 }
 

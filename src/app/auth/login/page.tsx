@@ -13,6 +13,10 @@ export default function LoginPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const callbackUrl = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('callbackUrl') || '/'
+    : '/';
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('verified') === 'success') {
@@ -33,7 +37,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       if (res.ok) {
-        window.location.href = '/';
+        window.location.href = callbackUrl;
       } else {
         const data = await res.json();
         setError(data.message || '登录失败');

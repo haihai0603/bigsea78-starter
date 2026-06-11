@@ -6,10 +6,31 @@ import { Separator } from '@/shared/components/ui/separator';
 import { getProductById, getProducts } from '@/core/db/queries';
 import { site } from '@/site/config';
 import { PayButton } from './PayButton';
+import { ProductImage } from '@/shared/components/ProductImage';
 
 const CATEGORY_ICONS: Record<string, string> = {
   software: '💻', course: '🎓', ebook: '📖', font: '🔤', audio: '🎵', template: '📐',
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  let product: any = null;
+  try {
+    product = await getProductById(id) as any;
+  } catch {}
+  if (!product) return { title: '产品未找到' };
+  const priceText = product.price === 0 ? '免费' : `¥${(product.price / 100).toFixed(0)}`;
+  return {
+    title: product.name,
+    description: product.description?.slice(0, 160) || `${product.name} - ${site.name}优质数字商品`,
+    openGraph: {
+      title: product.name,
+      description: product.description?.slice(0, 160) || `${product.name} - ${site.name}优质数字商品`,
+      type: 'website',
+      images: product.coverImage ? [{ url: product.coverImage, alt: product.name }] : [],
+    },
+  };
+}
 
 export const revalidate = 60;
 
@@ -39,8 +60,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     <div className='container mx-auto px-4 py-10'>
       <div className='grid md:grid-cols-2 gap-10'>
         {/* Left: Cover */}
-        <div className='aspect-square bg-muted rounded-lg flex items-center justify-center text-8xl'>
-          {CATEGORY_ICONS[product.category] || '📦'}
+        <div className='aspect-square bg-muted rounded-lg flex items-center justify-center text-8xl relative overflow-hidden'>
+          {product.coverImage ? (
+            <ProductImage src={product.coverImage} alt={product.name} />
+          ) : (
+            CATEGORY_ICONS[product.category] || '📦'
+          )}
         </div>
 
         {/* Right: Details */}
@@ -66,7 +91,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           )}
 
           {product.price === 0 ? (
-            <Link href={`/api/auth/sign-up/email?callbackUrl=/api/download?product_id=${product.id}`}>
+            <Link href={`/auth/register?callbackUrl=${encodeURIComponent(`/api/download?product_id=${product.id}`)}`}>
               <Button size='lg' className='w-full'>免费下载</Button>
             </Link>
           ) : (
